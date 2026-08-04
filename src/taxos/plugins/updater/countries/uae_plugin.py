@@ -11,5 +11,5 @@ class UAEUpdaterPlugin(AbstractUpdaterPlugin):
         return "AE"
 
     async def fetch_updates(self, tax_year: int) -> list[PluginUpdateResult]:
-        # TODO: Implement data collection pipeline for UAE
+        """Return no update until an approved UAE source is configured."""
         return []

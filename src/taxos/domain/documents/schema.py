@@ -6,12 +6,12 @@ No hardcoded layouts — everything is driven by these schemas.
 
 from __future__ import annotations
 
-from typing import Any, Literal
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
-
 # ── Branding ─────────────────────────────────────────────────────
+
 
 class BrandingConfig(BaseModel):
     """Corporate branding applied to generated documents."""
@@ -29,6 +29,7 @@ class BrandingConfig(BaseModel):
 
 # ── Locale ───────────────────────────────────────────────────────
 
+
 class LocaleConfig(BaseModel):
     """Localization settings for a report."""
 
@@ -41,6 +42,7 @@ class LocaleConfig(BaseModel):
 
 
 # ── Charts ───────────────────────────────────────────────────────
+
 
 class ReportChartConfig(BaseModel):
     """Defines a chart to embed in the document."""
@@ -55,6 +57,7 @@ class ReportChartConfig(BaseModel):
 
 
 # ── Sections ─────────────────────────────────────────────────────
+
 
 class SectionConfig(BaseModel):
     """A single configurable section of a report.
@@ -94,6 +97,7 @@ class SectionConfig(BaseModel):
 
 # ── Root Template ────────────────────────────────────────────────
 
+
 class ReportTemplateConfig(BaseModel):
     """The root configuration for a report template.
 
@@ -101,7 +105,7 @@ class ReportTemplateConfig(BaseModel):
     Any calculator can reference a template by its ``id``.
     """
 
-    id: str
+    id: str = Field(pattern=r"^[a-z0-9]+(?:-[a-z0-9]+)*$", min_length=2, max_length=100)
     name: str
     description: str = ""
     version: str = "1.0"
@@ -112,8 +116,14 @@ class ReportTemplateConfig(BaseModel):
 
     # Style
     template_style: Literal[
-        "minimal", "corporate", "government", "detailed",
-        "executive", "dark", "light", "print_friendly",
+        "minimal",
+        "corporate",
+        "government",
+        "detailed",
+        "executive",
+        "dark",
+        "light",
+        "print_friendly",
     ] = "corporate"
 
     branding: BrandingConfig = Field(default_factory=BrandingConfig)

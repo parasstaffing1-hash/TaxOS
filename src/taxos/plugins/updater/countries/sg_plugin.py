@@ -11,5 +11,5 @@ class SingaporeUpdaterPlugin(AbstractUpdaterPlugin):
         return "SG"
 
     async def fetch_updates(self, tax_year: int) -> list[PluginUpdateResult]:
-        # TODO: Implement data collection pipeline for Singapore
+        """Return no update until an approved Singaporean source is configured."""
         return []

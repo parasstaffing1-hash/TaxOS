@@ -9,20 +9,44 @@ rules:
       name: California State Income Tax
       brackets:
         - min_amount: 0
-          max_amount: 10412
+          max_amount: 10756
           rate: 0.01
-        - min_amount: 10412
-          max_amount: 24684
+        - min_amount: 10756
+          max_amount: 25499
           rate: 0.02
-          fixed_amount: 104.12
-        - min_amount: 24684
+          fixed_amount: 107.56
+        - min_amount: 25499
+          max_amount: 40245
           rate: 0.04
-          fixed_amount: 389.56
+          fixed_amount: 402.42
+        - min_amount: 40245
+          max_amount: 55866
+          rate: 0.06
+          fixed_amount: 992.26
+        - min_amount: 55866
+          max_amount: 70606
+          rate: 0.08
+          fixed_amount: 1929.52
+        - min_amount: 70606
+          max_amount: 360659
+          rate: 0.093
+          fixed_amount: 3108.72
+        - min_amount: 360659
+          max_amount: 432787
+          rate: 0.103
+          fixed_amount: 30083.65
+        - min_amount: 432787
+          max_amount: 721314
+          rate: 0.113
+          fixed_amount: 37512.83
+        - min_amount: 721314
+          rate: 0.123
+          fixed_amount: 70116.38
     - type: deduction
       name: CA Standard Deduction
-      amount: 5363
+      amount: 5540
   all:
     - type: payroll
-      name: State Disability Insurance (SDI)
+      name: Payroll - State Disability Insurance (SDI)
       employee_rate: 0.011
       employer_rate: 0.0

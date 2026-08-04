@@ -11,11 +11,18 @@ from typing import Any
 from taxos.domain.calculators.schema import CalculatorConfig
 from taxos.domain.documents.schema import ReportChartConfig
 
-
 # Default color palette
 _DEFAULT_COLORS = [
-    "#1a56db", "#059669", "#d97706", "#dc2626", "#7c3aed",
-    "#0891b2", "#be185d", "#4f46e5", "#65a30d", "#ea580c",
+    "#1a56db",
+    "#059669",
+    "#d97706",
+    "#dc2626",
+    "#7c3aed",
+    "#0891b2",
+    "#be185d",
+    "#4f46e5",
+    "#65a30d",
+    "#ea580c",
 ]
 
 
@@ -38,6 +45,7 @@ def render_chart_to_png(
     """
     # Lazy import — matplotlib is heavy, only load when needed
     import matplotlib
+
     matplotlib.use("Agg")  # Non-interactive backend
     import matplotlib.pyplot as plt
 
@@ -91,9 +99,11 @@ def render_chart_to_png(
 
     if chart_type == "pie":
         # Filter out zero/negative values for pie charts
-        filtered = [(l, v) for l, v in zip(labels, values) if v > 0]
+        filtered = [
+            (label, value) for label, value in zip(labels, values, strict=True) if value > 0
+        ]
         if filtered:
-            pie_labels, pie_values = zip(*filtered)
+            pie_labels, pie_values = zip(*filtered, strict=True)
             pie_colors = chart_colors[: len(pie_values)]
             ax.pie(
                 pie_values,
@@ -122,8 +132,10 @@ def render_chart_to_png(
     elif chart_type == "stacked_bar":
         # For stacked, treat each value as a segment of a single bar
         bottom = 0.0
-        for i, (label, val) in enumerate(zip(labels, values)):
-            ax.bar("Total", val, bottom=bottom, color=chart_colors[i % len(chart_colors)], label=label)
+        for i, (label, val) in enumerate(zip(labels, values, strict=True)):
+            ax.bar(
+                "Total", val, bottom=bottom, color=chart_colors[i % len(chart_colors)], label=label
+            )
             bottom += val
         ax.set_title(chart_config.title, fontsize=14, fontweight="bold")
         ax.legend(loc="upper right", fontsize=8)
@@ -134,7 +146,7 @@ def render_chart_to_png(
         ax.set_ylabel("Value")
         plt.xticks(rotation=30, ha="right")
         # Add value labels on bars
-        for bar, val in zip(bars, values):
+        for bar, val in zip(bars, values, strict=True):
             ax.text(
                 bar.get_x() + bar.get_width() / 2.0,
                 bar.get_height(),

@@ -1,13 +1,17 @@
 """API dependencies."""
 
 from collections.abc import AsyncGenerator
-from typing import TYPE_CHECKING
+from functools import lru_cache
 
 from fastapi import Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
-if TYPE_CHECKING:
-    from taxos.application.services.salary_calculator import SalaryCalculatorService
+from taxos.application.calculations.engine import UniversalTaxEngine
+from taxos.application.services.currency import CurrencyEngine
+from taxos.application.services.rule_engine import RuleEngineService
+from taxos.application.services.salary_calculator import SalaryCalculatorService
+from taxos.infrastructure.currency.mock_provider import MockExchangeRateProvider
+from taxos.infrastructure.rules.file_repository import FileBasedRuleRepository
 
 
 async def get_db(request: Request) -> AsyncGenerator[AsyncSession]:
@@ -16,20 +20,17 @@ async def get_db(request: Request) -> AsyncGenerator[AsyncSession]:
     async with session_factory() as session:
         yield session
 
-def get_rule_engine() -> "RuleEngineService":
-    from taxos.application.services.rule_engine import RuleEngineService
-    from taxos.infrastructure.rules.file_repository import FileBasedRuleRepository
-    
+
+@lru_cache(maxsize=1)
+def get_rule_engine() -> RuleEngineService:
+    """Reuse the rule repository so its TTL cache survives across requests."""
     repo = FileBasedRuleRepository(base_dir="rules")
     return RuleEngineService(repo)
 
 
-def get_salary_calculator_service() -> "SalaryCalculatorService":
-    from taxos.application.calculations.engine import UniversalTaxEngine
-    from taxos.application.services.currency import CurrencyEngine
-    from taxos.application.services.salary_calculator import SalaryCalculatorService
-    from taxos.infrastructure.currency.mock_provider import MockExchangeRateProvider
-
+@lru_cache(maxsize=1)
+def get_salary_calculator_service() -> SalaryCalculatorService:
+    """Build the stateless calculator service once per worker process."""
     rule_service = get_rule_engine()
     currency_engine = CurrencyEngine(provider=MockExchangeRateProvider())
     tax_calculator = UniversalTaxEngine()

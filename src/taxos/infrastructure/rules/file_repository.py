@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 from typing import Any, cast
 
@@ -49,18 +50,18 @@ class FileBasedRuleRepository(AbstractRuleRepository):
 
         if not target_path or not target_path.exists():
             return None
-
         try:
             raw_data = self._read_file(target_path)
             rule_set = TaxRuleSet.model_validate(raw_data)
-            self._cache[cache_key] = rule_set
-            return rule_set
         except ValidationError as e:
             logger.exception("rule_validation_failed", path=str(target_path), errors=e.errors())
             raise InfrastructureError(f"Invalid rule schema in {target_path}") from e
         except Exception as e:
             logger.exception("rule_read_failed", path=str(target_path), error=str(e))
             raise InfrastructureError(f"Failed to read {target_path}") from e
+        else:
+            self._cache[cache_key] = rule_set
+            return rule_set
 
     async def list_available_years(self, country: str) -> list[int]:
         country_dir = self.base_dir / country
@@ -77,19 +78,25 @@ class FileBasedRuleRepository(AbstractRuleRepository):
         self, country: str, year: int, state: str | None, city: str | None
     ) -> Path | None:
         """Construct the expected file path."""
-        base = self.base_dir / country / str(year)
+        country_segment = self._safe_segment(country)
+        state_segment = self._safe_segment(state) if state else None
+        city_segment = self._safe_segment(city) if city else None
+        if not country_segment or (state and not state_segment) or (city and not city_segment):
+            return None
 
-        if city and state:
-            file_name = f"{city.lower().replace(' ', '_')}"
+        base = self.base_dir / country_segment.upper() / str(year)
+
+        if city_segment and state_segment:
+            file_name = city_segment.lower()
             path_candidates = [
-                base / state / f"{file_name}.yaml",
-                base / state / f"{file_name}.json",
+                base / state_segment.upper() / f"{file_name}.yaml",
+                base / state_segment.upper() / f"{file_name}.json",
             ]
-        elif state:
-            file_name = f"{state.lower().replace(' ', '_')}"
+        elif state_segment:
+            file_name = state_segment.lower()
             path_candidates = [
-                base / state / "state.yaml",
-                base / state / "state.json",
+                base / state_segment.upper() / "state.yaml",
+                base / state_segment.upper() / "state.json",
                 base / f"{file_name}.yaml",
                 base / f"{file_name}.json",
             ]
@@ -101,7 +108,12 @@ class FileBasedRuleRepository(AbstractRuleRepository):
                 base / "national.json",
             ]
 
+        resolved_base = self.base_dir.resolve()
         for path in path_candidates:
+            try:
+                path.resolve().relative_to(resolved_base)
+            except ValueError:
+                continue
             if path.exists():
                 return path
 
@@ -115,3 +127,13 @@ class FileBasedRuleRepository(AbstractRuleRepository):
         if path.suffix == ".json":
             return cast("dict[str, Any]", json.loads(text))
         raise ValueError(f"Unsupported file extension: {path.suffix}")
+
+    @staticmethod
+    def _safe_segment(value: str | None) -> str | None:
+        """Normalize a user-controlled path segment without allowing traversal."""
+        if value is None:
+            return None
+        normalized = re.sub(r"\s+", "_", value.strip())
+        if not re.fullmatch(r"[A-Za-z0-9_-]+", normalized):
+            return None
+        return normalized

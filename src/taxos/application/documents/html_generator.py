@@ -7,11 +7,16 @@ suitable for browser viewing, printing, or email.
 from __future__ import annotations
 
 import base64
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
+import structlog
+
+from taxos.application.documents.chart_renderer import render_chart_to_png
 from taxos.domain.calculators.schema import CalculatorConfig
-from taxos.domain.documents.schema import ReportTemplateConfig, SectionConfig
+from taxos.domain.documents.schema import ReportTemplateConfig
+
+logger = structlog.get_logger(__name__)
 
 
 def _hex_to_rgb(hex_color: str) -> str:
@@ -51,7 +56,7 @@ class HTMLDocumentGenerator:
         sym = template.locale.currency_symbol
         primary = b.primary_color
         primary_rgb = _hex_to_rgb(primary)
-        now = datetime.now(timezone.utc).strftime(template.locale.date_format)
+        now = datetime.now(UTC).strftime(template.locale.date_format)
 
         # Build result rows
         summary_rows = ""
@@ -80,17 +85,16 @@ class HTMLDocumentGenerator:
         for section in template.sections:
             if section.type == "chart" and section.chart:
                 try:
-                    from taxos.application.documents.chart_renderer import render_chart_to_png
                     png_bytes = render_chart_to_png(section.chart, results, calculator_config)
                     b64 = base64.b64encode(png_bytes).decode("ascii")
                     chart_images += (
                         f'<div class="chart-container">'
-                        f'<h3>{section.chart.title}</h3>'
+                        f"<h3>{section.chart.title}</h3>"
                         f'<img src="data:image/png;base64,{b64}" alt="{section.chart.title}" />'
-                        f'</div>\n'
+                        f"</div>\n"
                     )
                 except Exception:
-                    pass  # Skip chart if rendering fails
+                    logger.warning("chart_rendering_failed", exc_info=True)
 
         # Disclaimer
         disclaimer = ""

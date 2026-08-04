@@ -11,5 +11,5 @@ class FranceUpdaterPlugin(AbstractUpdaterPlugin):
         return "FR"
 
     async def fetch_updates(self, tax_year: int) -> list[PluginUpdateResult]:
-        # TODO: Implement data collection pipeline for France
+        """Return no update until an approved French source is configured."""
         return []

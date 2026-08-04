@@ -76,12 +76,26 @@ ignore = [
     "TC002",    # type-checking block (third-party imports)
     "TC003",    # type-checking block (stdlib imports)
     "UP046",    # type params syntax (not widely adopted yet)
+    "B008",     # FastAPI dependency injection is intentionally declared in endpoint defaults
+    "E501",     # Black owns formatting; URLs, generated markup, and docstrings may exceed 99 chars
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["PLR2004", "PLC0415", "ARG001"]
+"tests/**" = [
+    "PLR2004", "PLC0415", "ARG001", "ARG002", "SLF001", "ERA001",
+    "S105", "S106", "PT011", "PLR0402",
+]
 "src/taxos/infrastructure/database/migrations/**" = ["E501", "W291"]
 "src/taxos/main.py" = ["E402"]
+"src/taxos/application/calculators/evaluator.py" = ["PLR0912"]
+"src/taxos/application/documents/chart_renderer.py" = ["PLC0415", "ICN001", "PLR0912", "PLR0915"]
+"src/taxos/application/documents/engine.py" = ["A002", "PLC0415", "PLR0911"]
+"src/taxos/application/documents/excel_generator.py" = ["PLR0915", "PLR2004"]
+"src/taxos/application/documents/pdf_generator.py" = ["PLR0915", "PLR2004"]
+"src/taxos/application/updater/validator.py" = ["PLR0912"]
+"src/taxos/application/verification/fuzzer.py" = ["S311", "TRY301"]
+"src/taxos/domain/seo/schemas.py" = ["N815"]
+"src/taxos/plugins/updater/countries/**" = ["ARG002"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["taxos"]
@@ -105,12 +119,9 @@ module = [
     "openpyxl.*",
     "yaml.*",
     "apscheduler.*",
+    "lxml.*",
 ]
 ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = "tests.*"
-disallow_untyped_defs = false
 
 # ── Pytest ───────────────────────────────────────────────────────
 [tool.pytest.ini_options]

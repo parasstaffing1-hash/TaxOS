@@ -62,6 +62,7 @@ class TaxSource(Base):
 
 class TaxUpdateJob(Base):
     """Tracks a run of the updater scheduler."""
+
     __tablename__ = "tax_updates"
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -75,6 +76,7 @@ class TaxUpdateJob(Base):
 
 class TaxUpdateLog(Base):
     """Detailed logs for history tracking of specific source scraping."""
+
     __tablename__ = "tax_update_logs"
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -82,9 +84,7 @@ class TaxUpdateLog(Base):
     source_id: Mapped[int | None] = mapped_column(
         ForeignKey("tax_sources.id", ondelete="SET NULL"), nullable=True
     )
-    timestamp: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     level: Mapped[str] = mapped_column(String(20))
     message: Mapped[str] = mapped_column(Text)
     error_details: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -92,6 +92,7 @@ class TaxUpdateLog(Base):
 
 class TaxRuleVersion(Base):
     """Tracks version history of rules."""
+
     __tablename__ = "tax_rule_versions"
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -113,6 +114,7 @@ class TaxRuleVersion(Base):
 
 class TaxRuleData(Base):
     """The actual JSON payload representing the RuleSet."""
+
     __tablename__ = "tax_rules"
 
     id: Mapped[int] = mapped_column(primary_key=True)

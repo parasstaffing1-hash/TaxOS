@@ -2,6 +2,7 @@ jurisdiction: UK
 level: country
 tax_year: 2024
 currency: GBP
+release_status: experimental
 
 rules:
   single:

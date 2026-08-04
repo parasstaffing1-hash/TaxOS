@@ -11,5 +11,5 @@ class IndiaUpdaterPlugin(AbstractUpdaterPlugin):
         return "IN"
 
     async def fetch_updates(self, tax_year: int) -> list[PluginUpdateResult]:
-        # TODO: Implement data collection pipeline for India
+        """Return no update until an approved Indian source is configured."""
         return []

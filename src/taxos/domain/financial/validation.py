@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import re
-from datetime import date
 from decimal import Decimal
 from typing import Annotated, Any
 
 from pydantic import (
+    AliasChoices,
     BaseModel,
     BeforeValidator,
     ConfigDict,
@@ -69,7 +69,10 @@ class IncomeProfile(BaseModel):
     currency: Currency = Field(default=Currency.USD)
 
     # Direct Annual Income
-    gross_income: SanitizedDecimal | None = None
+    gross_income: SanitizedDecimal | None = Field(
+        default=None,
+        validation_alias=AliasChoices("gross_income", "annual_salary"),
+    )
 
     # Or computed components
     salary: SanitizedDecimal | None = None
@@ -145,8 +148,10 @@ class DemographicProfile(BaseModel):
 
     filing_status: FilingStatus
     dependents: int = Field(default=0, ge=0, le=50)
-    tax_year: int = Field(default_factory=lambda: date.today().year, ge=1900, le=2100)
-    
+    # Never infer the calendar year: available tax-rule coverage can lag it.
+    # The public verified release currently ships 2024 rules.
+    tax_year: int = Field(default=2024, ge=1900, le=2100)
+
     age: int = Field(default=30, ge=0, le=120)
     blindness_status: bool = Field(default=False)
     student_loan: bool = Field(default=False)
@@ -161,7 +166,7 @@ class DeductionsProfile(BaseModel):
     # General pre-tax
     retirement_contribution: SanitizedDecimal = Field(default=Decimal("0.0"))
     health_insurance: SanitizedDecimal = Field(default=Decimal("0.0"))
-    
+
     # Specific US/Global Retirement
     pre_tax_401k: SanitizedDecimal = Field(default=Decimal("0.0"))
     roth_401k: SanitizedDecimal = Field(default=Decimal("0.0"))

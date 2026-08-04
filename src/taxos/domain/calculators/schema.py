@@ -12,12 +12,14 @@ class InputField(BaseModel):
 
     id: str
     label: str
-    type: Literal["currency", "number", "percentage", "select", "boolean"]
+    type: Literal["currency", "number", "percentage", "select", "boolean", "text"]
     required: bool = True
     default: Any = None
     min_value: float | None = None
     max_value: float | None = None
-    options: list[dict[str, str]] | None = None  # For select inputs: [{"label": "Yes", "value": "yes"}]
+    options: list[dict[str, str]] | None = (
+        None  # For select inputs: [{"label": "Yes", "value": "yes"}]
+    )
     help_text: str | None = None
 
 
@@ -50,7 +52,7 @@ class OutputConfig(BaseModel):
 class CalculatorConfig(BaseModel):
     """The root configuration for a dynamic calculator."""
 
-    slug: str
+    slug: str = Field(pattern=r"^[a-z0-9]+(?:-[a-z0-9]+)*$", min_length=2, max_length=100)
     title: str
     description: str
     inputs: list[InputField]

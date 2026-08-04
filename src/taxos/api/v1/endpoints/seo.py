@@ -2,7 +2,7 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, Response
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from taxos.api.v1.deps import get_db
@@ -11,6 +11,13 @@ from taxos.application.seo.sitemap import SitemapEngine
 from taxos.domain.seo.schemas import PageSEOData
 
 router = APIRouter(tags=["seo"])
+
+VERIFIED_TAX_YEAR = 2024
+
+SUPPORTED_SEO_ROUTES = {
+    ("after-tax-salary-calculator", "US", "CA"),
+    ("paycheck-calculator", "US", "CA"),
+}
 
 
 @router.get("/sitemap-index.xml", response_class=Response)
@@ -38,50 +45,72 @@ async def get_page_data(
     country: Annotated[str, Query()],
     state: Annotated[str | None, Query()] = None,
     city: Annotated[str | None, Query()] = None,
-    year: Annotated[int, Query()] = 2026,
+    year: Annotated[int, Query()] = VERIFIED_TAX_YEAR,
 ) -> PageSEOData:
     """Deterministically generate SEO metadata and structured data for a page."""
+    normalized_country = country.upper()
+    normalized_state = state.upper() if state else None
+    if (
+        city
+        or year != VERIFIED_TAX_YEAR
+        or (calculator_type, normalized_country, normalized_state) not in SUPPORTED_SEO_ROUTES
+    ):
+        raise HTTPException(status_code=404, detail="No verified public calculator route found")
+
     generator = SEOGenerator()
     return generator.generate_page_data(
         calculator_type=calculator_type,
-        country=country,
-        state=state,
-        city=city,
+        country=normalized_country,
+        state=normalized_state,
         year=year,
     )
 
+
 @router.get("/search")
 async def search_seo_routes(
-    q: Annotated[str, Query(min_length=2)],
-    db: AsyncSession = Depends(get_db)
+    q: Annotated[str, Query(min_length=2)], _db: AsyncSession = Depends(get_db)
 ) -> list[dict[str, str]]:
     """Autocomplete search for calculators and locations."""
-    # In a full deployment, this queries the `SEORoute` table or a search index like Elastic.
-    # For now, we simulate finding matches based on the query.
     q = q.lower()
-    
-    # We can hardcode some popular results or dynamically return based on query
-    results = []
-    if "calif" in q or "ca" in q:
-        results.append({"name": "After Tax Salary Calculator California", "url": "/after-tax-salary-calculator/usa/ca"})
-        results.append({"name": "Paycheck Calculator California", "url": "/paycheck-calculator/usa/ca"})
-    elif "new york" in q or "ny" in q:
-        results.append({"name": "Take Home Pay Calculator New York", "url": "/take-home-pay-calculator/usa/ny"})
-    elif "london" in q:
-        results.append({"name": "Net Salary Calculator London", "url": "/net-salary-calculator/uk/london"})
-    else:
-        results.append({"name": f"Income Tax Calculator {q.title()}", "url": f"/income-tax-calculator/usa/{q.replace(' ', '-')}"})
-    
-    return results
+    if not any(term in q for term in ("calif", "california", "ca", "paycheck", "salary")):
+        return []
+    return [
+        {
+            "name": "After-Tax Salary Calculator California (2024)",
+            "url": "/after-tax-salary-calculator/us/ca",
+        },
+        {
+            "name": "Paycheck Calculator California (2024)",
+            "url": "/paycheck-calculator/us/ca",
+        },
+    ]
+
 
 @router.get("/top-routes")
-async def get_top_routes(db: AsyncSession = Depends(get_db)):
-    """Return top 100 routes for build-time static generation."""
-    # Stubbed top routes
+async def get_top_routes(
+    _db: AsyncSession = Depends(get_db),
+) -> dict[str, list[dict[str, object]]]:
+    """Return verified public routes for build-time static generation."""
     return {
         "routes": [
-            {"calculator_type": "after-tax-salary-calculator", "location": ["usa", "ca"]},
-            {"calculator_type": "after-tax-salary-calculator", "location": ["usa", "ny", "new-york"]},
-            {"calculator_type": "paycheck-calculator", "location": ["usa", "tx"]},
+            {"calculator_type": "after-tax-salary-calculator", "location": ["us", "ca"]},
+            {"calculator_type": "paycheck-calculator", "location": ["us", "ca"]},
         ]
     }
+
+
+@router.get("/sitemaps/count")
+async def get_sitemap_count(db: AsyncSession = Depends(get_db)) -> dict[str, int]:
+    """Return the number of JSON sitemap chunks for Next.js generation."""
+    engine = SitemapEngine(db)
+    return {"total_chunks": await engine.get_total_chunks()}
+
+
+@router.get("/sitemaps/{chunk_id}")
+async def get_sitemap_urls(
+    chunk_id: int, db: AsyncSession = Depends(get_db)
+) -> dict[str, list[dict[str, str | float]]]:
+    """Return one verified public sitemap chunk as JSON."""
+    engine = SitemapEngine(db)
+    urls = await engine.get_chunk_urls(chunk_id)
+    return {"urls": [{"loc": url, "changefreq": "weekly", "priority": 0.8} for url in urls]}

@@ -1,12 +1,12 @@
-import pytest
 from decimal import Decimal
+
 from taxos.domain.financial.formulas import (
-    calculate_progressive_tax,
+    apply_bankers_rounding,
+    calculate_effective_tax_rate,
     calculate_flat_tax,
     calculate_payroll_tax,
+    calculate_progressive_tax,
     calculate_vat,
-    calculate_effective_tax_rate,
-    apply_bankers_rounding,
 )
 from taxos.domain.rules import TaxBracket
 
@@ -35,7 +35,9 @@ def test_calculate_flat_tax():
 
 
 def test_calculate_payroll_tax():
-    emp, er = calculate_payroll_tax(Decimal("200"), Decimal("0.05"), Decimal("0.10"), Decimal("100"))
+    emp, er = calculate_payroll_tax(
+        Decimal("200"), Decimal("0.05"), Decimal("0.10"), Decimal("100")
+    )
     assert emp == Decimal("5.00")  # Capped at 100
     assert er == Decimal("10.00")
 

@@ -6,9 +6,9 @@ import json
 from abc import ABC, abstractmethod
 from typing import Any, ClassVar, cast
 
+import openpyxl
 import pdfplumber
 from bs4 import BeautifulSoup
-import openpyxl
 from lxml import etree
 
 
@@ -64,7 +64,7 @@ class ExcelParser(AbstractParser):
         ws = wb.active
         if not ws:
             return []
-        
+
         data = []
         for row in ws.iter_rows(values_only=True):
             data.append(list(row))

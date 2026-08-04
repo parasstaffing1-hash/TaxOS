@@ -5,15 +5,16 @@ Maps domain rules to the Universal Formula Engine.
 
 from __future__ import annotations
 
-from typing import Protocol, Any
+from decimal import Decimal
+from typing import Protocol
 
 from taxos.application.calculations.base import CalculationContext, CalculationResult
 from taxos.domain.financial.formulas import (
+    apply_bankers_rounding,
     calculate_flat_tax,
     calculate_payroll_tax,
     calculate_progressive_tax,
     calculate_vat,
-    apply_bankers_rounding,
 )
 from taxos.domain.rules import (
     DeductionRule,
@@ -28,11 +29,11 @@ from taxos.domain.rules import (
 
 class TaxPlugin(Protocol):
     """Interface for all tax calculation plugins."""
-    
+
     def can_handle(self, rule: TaxRule) -> bool:
         """Return True if this plugin can process the given rule."""
         ...
-        
+
     def calculate(self, rule: TaxRule, context: CalculationContext) -> CalculationResult:
         """Process the rule and return a CalculationResult."""
         ...
@@ -45,7 +46,9 @@ class ProgressiveTaxPlugin:
     def calculate(self, rule: TaxRule, context: CalculationContext) -> CalculationResult:
         assert isinstance(rule, ProgressiveTaxRule)
         tax, details = calculate_progressive_tax(context.taxable_income, rule.brackets)
-        return CalculationResult(rule_name=rule.name, tax_amount=tax, details={"brackets_applied": details})
+        return CalculationResult(
+            rule_name=rule.name, tax_amount=tax, details={"brackets_applied": details}
+        )
 
 
 class FlatTaxPlugin:
@@ -80,7 +83,12 @@ class DeductionPlugin:
         return CalculationResult(
             rule_name=rule.name,
             deduction_amount=actual_deduction,
-            details={"calculated_deduction": str(deduction), "actual_deduction": str(actual_deduction)},
+            cash_deduction_amount=actual_deduction if rule.reduces_take_home else Decimal("0"),
+            details={
+                "calculated_deduction": str(deduction),
+                "actual_deduction": str(actual_deduction),
+                "reduces_take_home": rule.reduces_take_home,
+            },
         )
 
 
@@ -95,7 +103,8 @@ class TaxCreditPlugin:
             credit = min(credit, rule.max_limit)
 
         if not rule.is_refundable:
-            credit = min(credit, context.total_tax)
+            remaining_tax = max(Decimal("0"), context.total_tax - context.total_credits)
+            credit = min(credit, remaining_tax)
 
         return CalculationResult(
             rule_name=rule.name, credit_amount=credit, details={"refundable": rule.is_refundable}

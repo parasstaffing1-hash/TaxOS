@@ -11,8 +11,10 @@ from taxos.application.calculations.utils import round_currency
 from taxos.domain.rules import (
     DeductionRule,
     FlatTaxRule,
+    JurisdictionLevel,
     PayrollTaxRule,
     ProgressiveTaxRule,
+    ScopedTaxRule,
     TaxBracket,
     TaxCreditRule,
 )
@@ -85,6 +87,41 @@ class TestTaxCalculations:
         assert Decimal(res["taxable_income"]) == Decimal("95000.00")
         assert Decimal(res["total_deductions"]) == Decimal("5000.00")
         assert Decimal(res["final_tax"]) == Decimal("9500.00")
+
+    def test_jurisdiction_deductions_use_independent_tax_bases(
+        self, calculator: TaxCalculator
+    ) -> None:
+        """A state deduction must not reduce the federal taxable-income basis."""
+        rules = [
+            ScopedTaxRule(
+                rule=DeductionRule(name="Federal deduction", amount=Decimal("10000")),
+                jurisdiction="US",
+                level=JurisdictionLevel.COUNTRY,
+            ),
+            ScopedTaxRule(
+                rule=FlatTaxRule(name="Federal tax", rate=Decimal("0.10")),
+                jurisdiction="US",
+                level=JurisdictionLevel.COUNTRY,
+            ),
+            ScopedTaxRule(
+                rule=DeductionRule(name="State deduction", amount=Decimal("20000")),
+                jurisdiction="CA",
+                level=JurisdictionLevel.STATE,
+            ),
+            ScopedTaxRule(
+                rule=FlatTaxRule(name="State tax", rate=Decimal("0.05")),
+                jurisdiction="CA",
+                level=JurisdictionLevel.STATE,
+            ),
+        ]
+
+        result = calculator.calculate(Decimal("100000"), rules)
+
+        # Federal: (100k - 10k) * 10% = 9k; state: (100k - 20k) * 5% = 4k.
+        assert Decimal(result["taxable_income"]) == Decimal("90000.00")
+        assert Decimal(result["total_deductions"]) == Decimal("30000.00")
+        assert Decimal(result["final_tax"]) == Decimal("13000.00")
+        assert result["breakdown"][-1]["details"]["jurisdiction"] == "CA"
 
     def test_tax_credits(self, calculator: TaxCalculator) -> None:
         """Test non-refundable and refundable credits."""

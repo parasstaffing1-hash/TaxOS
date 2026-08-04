@@ -17,7 +17,7 @@
       "label": "Standard Deduction",
       "type": "currency",
       "required": false,
-      "default": 13850,
+      "default": 14600,
       "min_value": 0,
       "help_text": "The standard deduction amount for your filing status."
     },

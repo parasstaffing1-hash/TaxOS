@@ -11,5 +11,5 @@ class NewZealandUpdaterPlugin(AbstractUpdaterPlugin):
         return "NZ"
 
     async def fetch_updates(self, tax_year: int) -> list[PluginUpdateResult]:
-        # TODO: Implement data collection pipeline for NewZealand
+        """Return no update until an approved New Zealand source is configured."""
         return []

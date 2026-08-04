@@ -17,6 +17,7 @@ class CalculationResult:
     rule_name: str
     tax_amount: Decimal = Decimal("0.0")
     deduction_amount: Decimal = Decimal("0.0")
+    cash_deduction_amount: Decimal = Decimal("0.0")
     credit_amount: Decimal = Decimal("0.0")
     employer_cost: Decimal = Decimal("0.0")
     details: dict[str, Any] = field(default_factory=dict)
@@ -30,6 +31,7 @@ class CalculationContext:
     taxable_income: Decimal  # Mutated by deductions
     total_tax: Decimal = Decimal("0.0")
     total_deductions: Decimal = Decimal("0.0")
+    total_cash_deductions: Decimal = Decimal("0.0")
     total_credits: Decimal = Decimal("0.0")
     employer_cost: Decimal = Decimal("0.0")
     results: list[CalculationResult] = field(default_factory=list)
@@ -46,6 +48,7 @@ class CalculationContext:
         """Apply a result to the running totals."""
         self.total_tax += result.tax_amount
         self.total_deductions += result.deduction_amount
+        self.total_cash_deductions += result.cash_deduction_amount
         self.total_credits += result.credit_amount
         self.employer_cost += result.employer_cost
 

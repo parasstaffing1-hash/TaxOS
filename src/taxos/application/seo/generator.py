@@ -10,6 +10,8 @@ from taxos.domain.seo.schemas import (
     StructuredDataSoftwareApp,
 )
 
+ISO_COUNTRY_CODE_LENGTH = 2
+
 
 class SEOGenerator:
     """Generates deterministic SEO metadata and structured data for calculators."""
@@ -23,11 +25,11 @@ class SEOGenerator:
         country: str,
         state: str | None = None,
         city: str | None = None,
-        year: int = 2026,
+        year: int = 2024,
     ) -> PageSEOData:
         """
         Generate complete SEO payload deterministically based on location and type.
-        
+
         calculator_type should be something like 'after-tax-salary-calculator', 'paycheck-calculator'.
         """
         # Format names for presentation
@@ -37,9 +39,17 @@ class SEOGenerator:
         if city:
             location_parts.append(city.title())
         if state:
-            location_parts.append(str(state).upper() if len(str(state)) == 2 else str(state).title())
+            location_parts.append(
+                str(state).upper()
+                if len(str(state)) == ISO_COUNTRY_CODE_LENGTH
+                else str(state).title()
+            )
         if country:
-            location_parts.append(str(country).upper() if len(str(country)) == 2 else str(country).title())
+            location_parts.append(
+                str(country).upper()
+                if len(str(country)) == ISO_COUNTRY_CODE_LENGTH
+                else str(country).title()
+            )
 
         friendly_location = ", ".join(location_parts)
 
@@ -74,31 +84,35 @@ class SEOGenerator:
 
         # Structured Data
         faq_schema = self._generate_faq(friendly_type, friendly_location, year)
-        software_schema = self._generate_software(friendly_type, friendly_location, canonical_url)
+        software_schema = self._generate_software(friendly_type, friendly_location)
         breadcrumb_schema = self._generate_breadcrumbs(path_parts)
 
         content_paragraphs = [
             f"Welcome to the {friendly_type} for {friendly_location}. Whether you are negotiating a new salary, "
             f"planning your budget, or just curious about your deductions, our {year} calculator provides "
             f"accurate estimates of your take-home pay.",
-            f"Our deterministic tax engine factors in the latest {year} tax brackets, standard deductions, "
-            f"and payroll taxes applicable in {friendly_location}. Enter your gross income above to see a detailed "
-            f"breakdown of your net pay across annual, monthly, and biweekly periods."
+            f"Our calculator applies the verified {year} tax rules available for {friendly_location}. "
+            f"It shows each included tax layer in the result breakdown; estimates are not tax advice. "
+            f"Enter your gross income above to see annual, monthly, and biweekly results.",
         ]
 
         related = []
         if city:
             # Link to state
-            related.append({
-                "name": f"{str(state).upper()} {friendly_type}",
-                "url": f"/{calculator_type}/{str(country).lower()}/{str(state).lower()}"
-            })
+            related.append(
+                {
+                    "name": f"{str(state).upper()} {friendly_type}",
+                    "url": f"/{calculator_type}/{str(country).lower()}/{str(state).lower()}",
+                }
+            )
         elif state:
             # Link to country
-            related.append({
-                "name": f"{str(country).upper()} {friendly_type}",
-                "url": f"/{calculator_type}/{str(country).lower()}"
-            })
+            related.append(
+                {
+                    "name": f"{str(country).upper()} {friendly_type}",
+                    "url": f"/{calculator_type}/{str(country).lower()}",
+                }
+            )
 
         return PageSEOData(
             url=path,
@@ -111,7 +125,9 @@ class SEOGenerator:
             related_links=related,
         )
 
-    def _generate_faq(self, friendly_type: str, friendly_location: str, year: int) -> StructuredDataFAQ:
+    def _generate_faq(
+        self, friendly_type: str, friendly_location: str, year: int
+    ) -> StructuredDataFAQ:
         return StructuredDataFAQ(
             mainEntity=[
                 {
@@ -119,24 +135,26 @@ class SEOGenerator:
                     "name": f"How accurate is the {friendly_location} {friendly_type}?",
                     "acceptedAnswer": {
                         "@type": "Answer",
-                        "text": f"Our {year} calculator uses the latest official tax brackets and rules for {friendly_location} to provide highly accurate estimates."
-                    }
+                        "text": f"Our {year} calculator uses the verified tax rules available for {friendly_location}. Review the result breakdown to see which tax layers are included.",
+                    },
                 },
                 {
                     "@type": "Question",
                     "name": f"Does this include local taxes for {friendly_location}?",
                     "acceptedAnswer": {
                         "@type": "Answer",
-                        "text": f"Yes, the calculator automatically includes federal, state, and local taxes applicable in {friendly_location}."
-                    }
-                }
+                        "text": "The result includes the tax layers shown in its breakdown. Unlisted local taxes and personal circumstances are not included.",
+                    },
+                },
             ]
         )
 
-    def _generate_software(self, friendly_type: str, friendly_location: str, url: str) -> StructuredDataSoftwareApp:
+    def _generate_software(
+        self, friendly_type: str, friendly_location: str
+    ) -> StructuredDataSoftwareApp:
         return StructuredDataSoftwareApp(
             name=f"{friendly_type} {friendly_location}",
-            offers={"@type": "Offer", "price": "0", "priceCurrency": "USD"}
+            offers={"@type": "Offer", "price": "0", "priceCurrency": "USD"},
         )
 
     def _generate_breadcrumbs(self, path_parts: list[str]) -> StructuredDataBreadcrumb:
@@ -145,11 +163,13 @@ class SEOGenerator:
         for i, part in enumerate(path_parts, 1):
             current_path += f"/{part}"
             name = part.replace("-", " ").title()
-            items.append({
-                "@type": "ListItem",
-                "position": i,
-                "name": name,
-                "item": f"{self.base_url}{current_path}"
-            })
+            items.append(
+                {
+                    "@type": "ListItem",
+                    "position": i,
+                    "name": name,
+                    "item": f"{self.base_url}{current_path}",
+                }
+            )
 
         return StructuredDataBreadcrumb(itemListElement=items)

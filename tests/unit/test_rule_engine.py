@@ -13,6 +13,7 @@ from taxos.domain.rules import (
     FilingStatus,
     FlatTaxRule,
     JurisdictionLevel,
+    ScopedTaxRule,
     TaxRuleSet,
 )
 
@@ -30,6 +31,7 @@ class DummyRepository(AbstractRuleRepository):
     async def get_rule_set(
         self, country: str, year: int, state: str | None = None, city: str | None = None
     ) -> TaxRuleSet | None:
+        del year
         if city:
             return self.rules.get(f"{city}:city")
         if state:
@@ -37,6 +39,7 @@ class DummyRepository(AbstractRuleRepository):
         return self.rules.get(f"{country}:country")
 
     async def list_available_years(self, country: str) -> list[int]:
+        del country
         return [2024]
 
 
@@ -101,6 +104,11 @@ class TestRuleEngineService:
         assert len(rules) == 2
         names = {r.name for r in rules}
         assert names == {"Fed", "State"}
+        assert all(isinstance(rule, ScopedTaxRule) for rule in rules)
+        assert {(rule.jurisdiction, rule.level) for rule in rules} == {
+            ("US", JurisdictionLevel.COUNTRY),
+            ("CA", JurisdictionLevel.STATE),
+        }
 
     async def test_get_full_inheritance(self, engine: RuleEngineService) -> None:
         """Test merging country, state, and city rules."""
@@ -126,8 +134,7 @@ class TestRuleEngineService:
         with pytest.raises(NotFoundError, match="No rules found for UK in 2024"):
             await engine.get_applicable_rules("UK", 2024, FilingStatus.SINGLE)
 
-    async def test_missing_state_graceful(self, engine: RuleEngineService) -> None:
-        """Test that a missing state gracefully falls back to country rules."""
-        rules = await engine.get_applicable_rules("US", 2024, FilingStatus.SINGLE, state="NV")
-        assert len(rules) == 1
-        assert rules[0].name == "Fed"
+    async def test_missing_state_is_rejected(self, engine: RuleEngineService) -> None:
+        """Do not present a federal-only result as a verified state calculation."""
+        with pytest.raises(NotFoundError, match="No verified state rules found for US-NV in 2024"):
+            await engine.get_applicable_rules("US", 2024, FilingStatus.SINGLE, state="NV")

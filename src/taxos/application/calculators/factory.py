@@ -8,6 +8,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field, create_model
 
+from taxos.core.exceptions import InfrastructureError
 from taxos.domain.calculators.schema import CalculatorConfig
 
 
@@ -31,9 +32,10 @@ class CalculatorFactory:
                 config = CalculatorConfig(**data)
                 self.calculators[config.slug] = config
                 self.request_models[config.slug] = self._create_request_model(config)
-            except Exception as e:
-                # Log error in real app
-                print(f"Error loading calculator config {file_path}: {e}")
+            except Exception as exc:
+                raise InfrastructureError(
+                    f"Invalid calculator configuration: {file_path.name}"
+                ) from exc
 
     def _create_request_model(self, config: CalculatorConfig) -> type[BaseModel]:
         """Dynamically create a Pydantic model for request validation."""
@@ -50,7 +52,7 @@ class CalculatorFactory:
                 kwargs["default"] = inp.default
             elif not inp.required:
                 kwargs["default"] = None
-                field_type = field_type | None # type: ignore
+                field_type = field_type | None  # type: ignore
 
             if inp.min_value is not None:
                 kwargs["ge"] = inp.min_value
@@ -64,7 +66,7 @@ class CalculatorFactory:
                 fields[inp.id] = (field_type, Field(**kwargs))
 
         model_name = f"{config.slug.replace('-', ' ').title().replace(' ', '')}Request"
-        return create_model(model_name, **fields) # type: ignore
+        return create_model(model_name, **fields)  # type: ignore
 
     def get_config(self, slug: str) -> CalculatorConfig | None:
         return self.calculators.get(slug)
@@ -82,13 +84,13 @@ class CalculatorFactory:
         """Save a new or updated calculator configuration to disk and reload memory."""
         if not self.config_dir.exists():
             self.config_dir.mkdir(parents=True, exist_ok=True)
-            
+
         file_path = self.config_dir / f"{config.slug}.json"
-        
+
         # Serialize omitting defaults to keep it clean, if desired, but model_dump_json gives a full schema
         data = config.model_dump_json(indent=2)
         file_path.write_text(data, encoding="utf-8")
-        
+
         # Reload memory
         self.calculators[config.slug] = config
         self.request_models[config.slug] = self._create_request_model(config)

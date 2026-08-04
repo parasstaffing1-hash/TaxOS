@@ -11,5 +11,5 @@ class CanadaUpdaterPlugin(AbstractUpdaterPlugin):
         return "CA"
 
     async def fetch_updates(self, tax_year: int) -> list[PluginUpdateResult]:
-        # TODO: Implement data collection pipeline for Canada
+        """Return no update until an approved Canadian source is configured."""
         return []

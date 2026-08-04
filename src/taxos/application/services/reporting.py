@@ -31,14 +31,13 @@ class ReportingEngine:
             ws.title = "Analytics Report"
 
             # Write headers
-            ws.append(["Category", "Gross Income", "Total Tax", "Net Income", "Effective Rate (%)"])
+            ws.append(
+                ["Category", "Gross Income", "Total Tax", "Net Income", "Effective Rate (%)"]
+            )
 
             # Write data rows (handles the Dict[str, CalculationResponse] structure generically)
             for key, calc_res in data.items():
-                if hasattr(calc_res, "model_dump"):
-                    calc_dict = calc_res.model_dump()
-                else:
-                    calc_dict = calc_res
+                calc_dict = calc_res.model_dump() if hasattr(calc_res, "model_dump") else calc_res
 
                 gross = float(calc_dict["gross_income"]["annual"])
                 tax = float(calc_dict["total_tax"])
@@ -62,7 +61,9 @@ class ReportingEngine:
             _JOBS[job_id]["error"] = str(e)
 
     @classmethod
-    def start_report_generation(cls, background_tasks: Any, report_name: str, data: dict[str, Any]) -> str:
+    def start_report_generation(
+        cls, background_tasks: Any, report_name: str, data: dict[str, Any]
+    ) -> str:
         """Enqueue the job and return a Job ID."""
         job_id = str(uuid4())
         _JOBS[job_id] = {"status": "processing", "file_path": None, "error": None}

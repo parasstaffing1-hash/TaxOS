@@ -6,7 +6,7 @@ documentation, README files, or rendering in any Markdown viewer.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from taxos.domain.calculators.schema import CalculatorConfig
@@ -40,7 +40,7 @@ class MarkdownDocumentGenerator:
     ) -> bytes:
         """Generate a Markdown byte string."""
         sym = template.locale.currency_symbol
-        now = datetime.now(timezone.utc).strftime(template.locale.date_format)
+        now = datetime.now(UTC).strftime(template.locale.date_format)
         lines: list[str] = []
 
         lines.append(f"# {calculator_config.title}")

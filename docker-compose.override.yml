@@ -9,3 +9,6 @@ services:
       - DEBUG=true
       - LOG_LEVEL=DEBUG
       - LOG_FORMAT=console
+  db:
+    ports:
+      - "127.0.0.1:5432:5432"

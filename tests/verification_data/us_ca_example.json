@@ -1,7 +1,15 @@
 {
+  "metadata": {
+    "description": "2024 US/California statutory-rate regression scenario before taxpayer-specific credits or adjustments.",
+    "sources": [
+      "https://www.irs.gov/media/166986",
+      "https://www.ftb.ca.gov/forms/2024/2024-540-booklet.html",
+      "https://edd.ca.gov/en/payroll_taxes/rates_and_withholding/"
+    ]
+  },
   "test_cases": [
     {
-      "name": "US California Single 100k",
+      "name": "US California Single 100k statutory-rate regression",
       "inputs": {
         "calculator_type": "after-tax-salary-calculator",
         "tax_year": 2024,
@@ -13,9 +21,9 @@
       },
       "expected": {
         "gross_pay": 100000.0,
-        "total_tax": 27351.05,
-        "net_pay": 72648.95,
-        "effective_tax_rate": 0.2735
+        "total_tax": 27918.14,
+        "net_pay": 72081.86,
+        "effective_tax_rate": 0.2792
       }
     }
   ]

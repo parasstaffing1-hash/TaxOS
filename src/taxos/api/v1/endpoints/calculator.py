@@ -9,6 +9,7 @@ from fastapi.responses import Response
 from structlog import get_logger
 
 from taxos.api.schemas.calculator import CalculationResponse, CalculatorRequest
+from taxos.api.v1.deps import get_salary_calculator_service
 from taxos.application.services.exports import (
     generate_csv_report,
     generate_excel_report,
@@ -19,9 +20,6 @@ from taxos.application.services.salary_calculator import SalaryCalculatorService
 logger = get_logger(__name__)
 
 router = APIRouter(tags=["calculator"])
-
-
-from taxos.api.v1.deps import get_salary_calculator_service
 
 CalculatorServiceDep = Annotated[SalaryCalculatorService, Depends(get_salary_calculator_service)]
 JurisdictionPath = Annotated[

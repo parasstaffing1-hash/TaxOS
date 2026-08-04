@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import date
 from decimal import Decimal
+from typing import ClassVar
 
 from taxos.application.interfaces.currency import AbstractExchangeRateProvider
 from taxos.core.exceptions import NotFoundError
@@ -14,7 +15,7 @@ class MockExchangeRateProvider(AbstractExchangeRateProvider):
     """Static mock provider returning hardcoded exchange rates based against USD."""
 
     # Base rates relative to 1 USD
-    _USD_RATES = {
+    _USD_RATES: ClassVar[dict[Currency, Decimal]] = {
         Currency.USD: Decimal("1.0"),
         Currency.EUR: Decimal("0.92"),
         Currency.GBP: Decimal("0.79"),
@@ -29,6 +30,7 @@ class MockExchangeRateProvider(AbstractExchangeRateProvider):
         self, from_currency: Currency, to_currency: Currency, for_date: date | None = None
     ) -> Decimal:
         """Calculate cross-rate using USD as the base."""
+        del for_date  # Static development rates intentionally have no historical dimension.
         if from_currency not in self._USD_RATES:
             val = getattr(from_currency, "value", str(from_currency))
             raise NotFoundError(f"No exchange rate found for {val}")
@@ -36,10 +38,6 @@ class MockExchangeRateProvider(AbstractExchangeRateProvider):
             val = getattr(to_currency, "value", str(to_currency))
             raise NotFoundError(f"No exchange rate found for {val}")
 
-        # Convert `from` -> `USD` -> `to`
-        # rate = (1 / from_usd_rate) * to_usd_rate
         from_usd = self._USD_RATES[from_currency]
         to_usd = self._USD_RATES[to_currency]
-
-        cross_rate = to_usd / from_usd
-        return cross_rate
+        return to_usd / from_usd

@@ -6,6 +6,7 @@ from typing import Any
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from fastapi.responses import FileResponse
 
+from taxos.api.dependencies.auth import get_current_admin
 from taxos.api.schemas.analytics import (
     IncomeDistributionRequest,
     IncomeDistributionResponse,
@@ -15,14 +16,11 @@ from taxos.api.schemas.analytics import (
     TrendAnalysisResponse,
 )
 from taxos.api.v1.deps import get_salary_calculator_service
-from taxos.application.services.analytics import TaxAnalyticsService
+from taxos.application.services.analytics import AsyncMemoizer, TaxAnalyticsService
 from taxos.application.services.reporting import ReportingEngine
 from taxos.application.services.salary_calculator import SalaryCalculatorService
 
-router = APIRouter(tags=["analytics"])
-
-
-from taxos.application.services.analytics import AsyncMemoizer
+router = APIRouter(tags=["analytics"], dependencies=[Depends(get_current_admin)])
 
 # Create a global cache for demo purposes so memory persists across requests
 _global_cache = AsyncMemoizer()
@@ -31,9 +29,7 @@ _global_cache = AsyncMemoizer()
 def get_cached_analytics_service(
     salary_service: SalaryCalculatorService = Depends(get_salary_calculator_service),
 ) -> TaxAnalyticsService:
-    service = TaxAnalyticsService(salary_service)
-    service._cache = _global_cache
-    return service
+    return TaxAnalyticsService(salary_service, cache=_global_cache)
 
 
 @router.post("/compare-locations", response_model=LocationComparisonResponse)
@@ -70,7 +66,9 @@ async def generate_report(
     data = await analytics_service.compare_locations(request)
 
     # Enqueue job
-    job_id = ReportingEngine.start_report_generation(background_tasks, "Location_Comparison", data.results)
+    job_id = ReportingEngine.start_report_generation(
+        background_tasks, "Location_Comparison", data.results
+    )
 
     return {"job_id": job_id, "status": "processing"}
 

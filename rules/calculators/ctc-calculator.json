@@ -5,11 +5,12 @@
   "inputs": [
     { "id": "gross_income", "label": "Base Salary", "type": "currency", "required": true, "default": 100000 },
     { "id": "country", "label": "Country Code", "type": "text", "required": true, "default": "US" },
-    { "id": "state", "label": "State Code", "type": "text", "required": false, "default": "CA" }
+    { "id": "state", "label": "State Code", "type": "text", "required": false, "default": "CA" },
+    { "id": "tax_year", "label": "Tax Year", "type": "number", "required": true, "default": 2024, "min_value": 2024, "max_value": 2024 }
   ],
   "formulas": [
     { "id": "tax_data", "expression": "tax(gross_income, country, state)", "is_result": false },
-    { "id": "employer_cost", "label": "Employer Cost", "expression": "tax_data['employer_cost']", "format": "currency", "is_result": true },
+    { "id": "employer_cost", "label": "Employer Cost", "expression": "tax_data['employer_cost']['annual']", "format": "currency", "is_result": true },
     { "id": "total_ctc", "label": "Total CTC", "expression": "gross_income + employer_cost", "format": "currency", "is_result": true },
     { "id": "net_income", "label": "Employee Take Home", "expression": "tax_data['net_income']['annual']", "format": "currency", "is_result": true }
   ],

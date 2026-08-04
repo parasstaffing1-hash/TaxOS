@@ -6,7 +6,7 @@ import ast
 import operator
 from collections.abc import Awaitable, Callable
 from decimal import Decimal
-from typing import Any
+from typing import Any, ClassVar, cast
 
 from taxos.api.schemas.calculator import (
     CalculatorRequest,
@@ -23,7 +23,7 @@ class FormulaError(Exception):
 class AsyncSafeEvaluator:
     """Safely evaluates mathematical expressions and macros asynchronously using an AST."""
 
-    _OPS = {
+    _OPS: ClassVar[dict[type[ast.AST], Callable[..., Any]]] = {
         ast.Add: operator.add,
         ast.Sub: operator.sub,
         ast.Mult: operator.mul,
@@ -43,33 +43,54 @@ class AsyncSafeEvaluator:
             "net_to_gross": self._macro_net_to_gross,
         }
 
+    def _get_tax_year(self) -> int:
+        """Return the explicitly supplied tax year or the supported launch year."""
+        value = self.variables.get("tax_year", 2024)
+        try:
+            return int(value)
+        except (TypeError, ValueError) as exc:
+            raise FormulaError("tax_year must be a whole number") from exc
+
+    @staticmethod
+    def _to_formula_value(value: Any) -> Any:
+        """Convert API values into primitives safe for arithmetic expressions."""
+        if isinstance(value, Decimal):
+            return float(value)
+        if isinstance(value, dict):
+            return {key: AsyncSafeEvaluator._to_formula_value(item) for key, item in value.items()}
+        if isinstance(value, list):
+            return [AsyncSafeEvaluator._to_formula_value(item) for item in value]
+        return value
+
     async def _macro_tax(self, income: float, country: str, state: str) -> dict[str, Any]:
         if not self.salary_service:
             raise FormulaError("SalaryCalculatorService not injected.")
         req = CalculatorRequest(
             location=LocationProfile(country=country, state=state, city=""),
-            demographics=DemographicProfile(tax_year=2026, filing_status="single"),
+            demographics=DemographicProfile(tax_year=self._get_tax_year(), filing_status="single"),
             income=IncomeProfile(gross_income=Decimal(str(income))),
-            currency="USD"
+            currency="USD",
         )
         res = await self.salary_service.calculate(req)
-        return res.model_dump()
+        return cast("dict[str, Any]", self._to_formula_value(res.model_dump()))
 
-    async def _macro_net_to_gross(self, target_net: float, country: str, state: str) -> dict[str, Any]:
+    async def _macro_net_to_gross(
+        self, target_net: float, country: str, state: str
+    ) -> dict[str, Any]:
         if not self.salary_service:
             raise FormulaError("SalaryCalculatorService not injected.")
         req = CalculatorRequest(
             location=LocationProfile(country=country, state=state, city=""),
-            demographics=DemographicProfile(tax_year=2026, filing_status="single"),
-            income=IncomeProfile(gross_income=Decimal("0.0")), # Will be determined
-            currency="USD"
+            demographics=DemographicProfile(tax_year=self._get_tax_year(), filing_status="single"),
+            income=IncomeProfile(gross_income=Decimal("0.0")),  # Will be determined
+            currency="USD",
         )
         res = await self.salary_service.calculate_net_to_gross(Decimal(str(target_net)), req)
-        return res.model_dump()
+        return cast("dict[str, Any]", self._to_formula_value(res.model_dump()))
 
     async def eval(self, expression: str) -> Any:
         try:
-            tree = ast.parse(expression, mode='eval')
+            tree = ast.parse(expression, mode="eval")
             return await self._eval_node(tree.body)
         except Exception as e:
             raise FormulaError(f"Error evaluating '{expression}': {e}") from e
@@ -88,14 +109,14 @@ class AsyncSafeEvaluator:
             right = await self._eval_node(node.right)
             op_type = type(node.op)
             if op_type in self._OPS:
-                return self._OPS[op_type](left, right) # type: ignore
+                return self._OPS[op_type](left, right)
             raise FormulaError(f"Unsupported operator: {op_type}")
 
         if isinstance(node, ast.UnaryOp):
             operand = await self._eval_node(node.operand)
             uop_type = type(node.op)
             if uop_type in self._OPS:
-                return self._OPS[uop_type](operand) # type: ignore
+                return self._OPS[uop_type](operand)
             raise FormulaError(f"Unsupported unary operator: {uop_type}")
 
         if isinstance(node, ast.Call):
@@ -122,7 +143,7 @@ class AsyncSafeEvaluator:
 async def evaluate_calculator(
     config: CalculatorConfig,
     inputs: dict[str, Any],
-    salary_service: SalaryCalculatorService | None = None
+    salary_service: SalaryCalculatorService | None = None,
 ) -> dict[str, Any]:
 
     state: dict[str, Any] = {}
@@ -134,7 +155,7 @@ async def evaluate_calculator(
 
     evaluator = AsyncSafeEvaluator(state, salary_service)
 
-    results = {}
+    results: dict[str, Any] = {}
 
     for formula in config.formulas:
         val = await evaluator.eval(formula.expression)
@@ -145,11 +166,8 @@ async def evaluate_calculator(
         if formula.is_result:
             results[formula.id] = val
 
-    for k, v in state.items():
-        if k not in results:
-            if isinstance(v, Decimal):
-                v = float(v)
-            results[k] = v
+    for key, value in state.items():
+        if key not in results:
+            results[key] = float(value) if isinstance(value, Decimal) else value
 
     return results
-

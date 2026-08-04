@@ -11,5 +11,5 @@ class AustraliaUpdaterPlugin(AbstractUpdaterPlugin):
         return "AU"
 
     async def fetch_updates(self, tax_year: int) -> list[PluginUpdateResult]:
-        # TODO: Implement data collection pipeline for Australia
+        """Return no update until an approved Australian source is configured."""
         return []

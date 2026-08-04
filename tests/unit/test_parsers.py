@@ -1,10 +1,15 @@
+import json
+
 import pytest
 from bs4 import BeautifulSoup
-import json
-import csv
-import io
 
-from taxos.infrastructure.scrapers.parsers import ParserFactory, JSONParser, CSVParser, HTMLParser, PDFParser
+from taxos.infrastructure.scrapers.parsers import (
+    CSVParser,
+    HTMLParser,
+    JSONParser,
+    ParserFactory,
+    PDFParser,
+)
 
 
 def test_parser_factory():
@@ -12,7 +17,7 @@ def test_parser_factory():
     assert isinstance(ParserFactory.get_parser("csv"), CSVParser)
     assert isinstance(ParserFactory.get_parser("html"), HTMLParser)
     assert isinstance(ParserFactory.get_parser("pdf"), PDFParser)
-    
+
     with pytest.raises(ValueError):
         ParserFactory.get_parser("unknown")
 

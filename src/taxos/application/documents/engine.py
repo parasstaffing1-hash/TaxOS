@@ -54,12 +54,12 @@ def _auto_populate_chart_sources(
     so that it works generically with any calculator. This function
     populates them from the calculator's formula metadata.
     """
+    template = template.model_copy(deep=True)
     result_ids = [f.id for f in calculator_config.formulas if f.is_result]
 
     for section in template.sections:
-        if section.type == "chart" and section.chart:
-            if not section.chart.data_sources:
-                section.chart.data_sources = result_ids
+        if section.type == "chart" and section.chart and not section.chart.data_sources:
+            section.chart.data_sources = result_ids
 
     return template
 
@@ -114,36 +114,60 @@ class DocumentEngine:
 
         if format == "pdf":
             from taxos.application.documents.pdf_generator import PDFDocumentGenerator
-            return PDFDocumentGenerator().generate(calculator_config, results, template, inputs_data)
+
+            return PDFDocumentGenerator().generate(
+                calculator_config, results, template, inputs_data
+            )
 
         if format == "excel":
             from taxos.application.documents.excel_generator import ExcelDocumentGenerator
-            return ExcelDocumentGenerator().generate(calculator_config, results, template, inputs_data)
+
+            return ExcelDocumentGenerator().generate(
+                calculator_config, results, template, inputs_data
+            )
 
         if format == "csv":
             from taxos.application.documents.csv_generator import CSVDocumentGenerator
-            return CSVDocumentGenerator().generate(calculator_config, results, template, inputs_data)
+
+            return CSVDocumentGenerator().generate(
+                calculator_config, results, template, inputs_data
+            )
 
         if format == "json":
             from taxos.application.documents.json_generator import JSONDocumentGenerator
-            return JSONDocumentGenerator().generate(calculator_config, results, template, inputs_data)
+
+            return JSONDocumentGenerator().generate(
+                calculator_config, results, template, inputs_data
+            )
 
         if format == "html":
             from taxos.application.documents.html_generator import HTMLDocumentGenerator
-            return HTMLDocumentGenerator().generate(calculator_config, results, template, inputs_data)
+
+            return HTMLDocumentGenerator().generate(
+                calculator_config, results, template, inputs_data
+            )
 
         if format == "xml":
             from taxos.application.documents.xml_generator import XMLDocumentGenerator
-            return XMLDocumentGenerator().generate(calculator_config, results, template, inputs_data)
+
+            return XMLDocumentGenerator().generate(
+                calculator_config, results, template, inputs_data
+            )
 
         if format == "markdown":
             from taxos.application.documents.markdown_generator import MarkdownDocumentGenerator
-            return MarkdownDocumentGenerator().generate(calculator_config, results, template, inputs_data)
+
+            return MarkdownDocumentGenerator().generate(
+                calculator_config, results, template, inputs_data
+            )
 
         if format == "text":
             # Plain text falls back to markdown (it renders well as plain text)
             from taxos.application.documents.markdown_generator import MarkdownDocumentGenerator
-            return MarkdownDocumentGenerator().generate(calculator_config, results, template, inputs_data)
+
+            return MarkdownDocumentGenerator().generate(
+                calculator_config, results, template, inputs_data
+            )
 
         raise ValueError(f"Unsupported export format: {format}")
 

@@ -11,5 +11,5 @@ class GermanyUpdaterPlugin(AbstractUpdaterPlugin):
         return "DE"
 
     async def fetch_updates(self, tax_year: int) -> list[PluginUpdateResult]:
-        # TODO: Implement data collection pipeline for Germany
+        """Return no update until an approved German source is configured."""
         return []

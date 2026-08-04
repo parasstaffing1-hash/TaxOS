@@ -22,8 +22,20 @@ rules:
           rate: 0.22
           fixed_amount: 5426
         - min_amount: 100525
+          max_amount: 191950
           rate: 0.24
           fixed_amount: 17168.50
+        - min_amount: 191950
+          max_amount: 243725
+          rate: 0.32
+          fixed_amount: 39110.50
+        - min_amount: 243725
+          max_amount: 609350
+          rate: 0.35
+          fixed_amount: 55678.50
+        - min_amount: 609350
+          rate: 0.37
+          fixed_amount: 183647.25
     - type: deduction
       name: Standard Deduction
       amount: 14600

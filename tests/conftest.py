@@ -17,10 +17,10 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
 )
+from sqlalchemy.pool import StaticPool
 
 from taxos.core.config import Settings
-from taxos.infrastructure.database.base import Base
-import taxos.infrastructure.database.models  # Ensure models are registered in Base.metadata
+from taxos.infrastructure.database import models
 
 
 @pytest.fixture(scope="session")
@@ -49,14 +49,17 @@ async def engine(test_settings: Settings) -> AsyncGenerator[AsyncEngine]:
     test_engine = create_async_engine(
         test_settings.DATABASE_URL,
         echo=False,
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
     )
     async with test_engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+        # Importing the package registers every ORM model before metadata is created.
+        await conn.run_sync(models.User.metadata.create_all)
 
     yield test_engine
 
     async with test_engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
+        await conn.run_sync(models.User.metadata.drop_all)
     await test_engine.dispose()
 
 
@@ -69,6 +72,12 @@ async def session(
     async with factory() as test_session:
         yield test_session
         await test_session.rollback()
+
+
+@pytest.fixture
+def setup_database(engine: AsyncEngine) -> None:
+    """Ensure integration tests have a named database setup fixture."""
+    del engine
 
 
 @pytest.fixture

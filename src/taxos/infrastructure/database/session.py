@@ -20,13 +20,16 @@ from taxos.core.config import Settings
 
 def build_engine(settings: Settings) -> AsyncEngine:
     """Create a configured async SQLAlchemy engine."""
-    return create_async_engine(
-        settings.DATABASE_URL,
-        echo=settings.DATABASE_ECHO,
-        pool_size=settings.DATABASE_POOL_SIZE,
-        max_overflow=settings.DATABASE_MAX_OVERFLOW,
-        pool_pre_ping=True,
-    )
+    engine_options: dict[str, object] = {
+        "echo": settings.DATABASE_ECHO,
+        "pool_pre_ping": True,
+    }
+    if not settings.DATABASE_URL.startswith("sqlite"):
+        engine_options.update(
+            pool_size=settings.DATABASE_POOL_SIZE,
+            max_overflow=settings.DATABASE_MAX_OVERFLOW,
+        )
+    return create_async_engine(settings.DATABASE_URL, **engine_options)
 
 
 def build_session_factory(engine: AsyncEngine) -> async_sessionmaker[AsyncSession]:

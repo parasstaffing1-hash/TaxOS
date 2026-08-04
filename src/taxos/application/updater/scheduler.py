@@ -1,6 +1,6 @@
 """Background scheduler for the Auto Updater."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
@@ -23,7 +23,7 @@ class UpdaterScheduler:
             self._scheduled_task,
             CronTrigger(hour=3, minute=0),
             id="daily_tax_update",
-            replace_existing=True
+            replace_existing=True,
         )
         self.scheduler.start()
 
@@ -35,6 +35,6 @@ class UpdaterScheduler:
     async def _scheduled_task(self) -> None:
         """The actual task executed by APScheduler."""
         # By default, check current year and next year
-        current_year = datetime.now().year
+        current_year = datetime.now(UTC).year
         await self.coordinator.run_update_cycle(current_year)
         await self.coordinator.run_update_cycle(current_year + 1)

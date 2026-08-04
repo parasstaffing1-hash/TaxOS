@@ -23,6 +23,8 @@ class TestSettings:
         settings = Settings(
             ENVIRONMENT="production",
             DATABASE_URL="sqlite+aiosqlite:///",
+            SECRET_KEY="test-production-secret-key-32-characters",
+            ALLOWED_ORIGINS=["https://tax.example.com"],
         )
         assert settings.is_production is True
 

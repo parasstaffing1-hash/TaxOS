@@ -28,14 +28,14 @@ class VersioningService:
         stmt = select(TaxRuleVersion).where(
             TaxRuleVersion.jurisdiction == jurisdiction,
             TaxRuleVersion.tax_year == tax_year,
-            TaxRuleVersion.is_active == True
+            TaxRuleVersion.is_active.is_(True),
         )
         result = await self.session.execute(stmt)
         return result.scalars().first()
 
     async def apply_update(self, update: PluginUpdateResult) -> bool:
         """Apply an update if it differs from the active version.
-        
+
         Returns:
             True if a new version was created, False if there was no change.
         """
@@ -63,16 +63,13 @@ class VersioningService:
             tax_year=update.tax_year,
             version_hash=payload_hash,
             effective_from=update.effective_from,
-            is_active=True
+            is_active=True,
         )
         self.session.add(new_version)
         await self.session.flush()  # To get new_version.id
 
         # Save actual rule data
-        new_data = TaxRuleData(
-            version_id=new_version.id,
-            payload=update.rule_payload
-        )
+        new_data = TaxRuleData(version_id=new_version.id, payload=update.rule_payload)
         self.session.add(new_data)
 
         await self.session.commit()

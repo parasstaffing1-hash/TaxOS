@@ -7,7 +7,7 @@ with full metadata.
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from taxos.domain.calculators.schema import CalculatorConfig
@@ -31,7 +31,7 @@ class JSONDocumentGenerator:
                 "title": calculator_config.title,
                 "description": calculator_config.description,
                 "template": template.id,
-                "generated_at": datetime.now(timezone.utc).isoformat(),
+                "generated_at": datetime.now(UTC).isoformat(),
                 "currency": template.locale.currency_code,
                 "version": template.version,
             },
@@ -63,12 +63,14 @@ class JSONDocumentGenerator:
         # Full breakdown — all formulas
         for formula in calculator_config.formulas:
             val = results.get(formula.id)
-            report["breakdown"].append({
-                "id": formula.id,
-                "label": formula.label or formula.id,
-                "value": val,
-                "format": formula.format,
-                "is_result": formula.is_result,
-            })
+            report["breakdown"].append(
+                {
+                    "id": formula.id,
+                    "label": formula.label or formula.id,
+                    "value": val,
+                    "format": formula.format,
+                    "is_result": formula.is_result,
+                }
+            )
 
         return json.dumps(report, indent=2, default=str).encode("utf-8")

@@ -2,14 +2,12 @@
 
 from __future__ import annotations
 
-import asyncio
-from datetime import datetime
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, delete
 
-from taxos.infrastructure.database.models.seo import SEORoute, SEOInternalLink
-from taxos.infrastructure.database.models.updater import TaxCountry, TaxState, TaxCity
 from taxos.application.seo.generator import SEOGenerator
+from taxos.infrastructure.database.models.seo import SEORoute
+from taxos.infrastructure.database.models.updater import TaxCity, TaxCountry, TaxState
 
 
 class SEOIndexer:
@@ -33,20 +31,20 @@ class SEOIndexer:
 
         # In a true 10M page scenario, this would be chunked/batched.
         # For simplicity, we process them sequentially and commit periodically.
-        
+
         for calc_type in calculator_types:
             routes_to_add = []
 
             # 1. Country Pages
             for country in countries:
                 routes_to_add.append(self._build_route(calc_type, country.code, None, None, year))
-                
+
             # 2. State Pages
             for state in states:
                 # Find matching country code (assuming lazy load or mapping available)
                 # This requires proper joins in production, but we stub for now
                 routes_to_add.append(self._build_route(calc_type, "us", state.code, None, year))
-                
+
             # 3. City Pages
             for city in cities:
                 routes_to_add.append(self._build_route(calc_type, "us", "ca", city.name, year))
@@ -59,15 +57,17 @@ class SEOIndexer:
                 if not exists:
                     self.db.add(route)
                     total_indexed += 1
-            
+
             await self.db.commit()
 
         return total_indexed
 
-    def _build_route(self, calc_type: str, country: str, state: str | None, city: str | None, year: int) -> SEORoute:
+    def _build_route(
+        self, calc_type: str, country: str, state: str | None, city: str | None, year: int
+    ) -> SEORoute:
         """Helper to use the Generator to hydrate a DB model."""
         page_data = self.generator.generate_page_data(calc_type, country, state, city, year)
-        
+
         return SEORoute(
             slug=page_data.url,
             calculator_type=calc_type,
@@ -81,7 +81,11 @@ class SEOIndexer:
             h1=page_data.h1,
             content_paragraphs=page_data.content_paragraphs,
             faq_schema=page_data.faq_schema.model_dump() if page_data.faq_schema else None,
-            software_schema=page_data.software_schema.model_dump() if page_data.software_schema else None,
-            breadcrumb_schema=page_data.breadcrumb_schema.model_dump() if page_data.breadcrumb_schema else None,
-            is_active=True
+            software_schema=(
+                page_data.software_schema.model_dump() if page_data.software_schema else None
+            ),
+            breadcrumb_schema=(
+                page_data.breadcrumb_schema.model_dump() if page_data.breadcrumb_schema else None
+            ),
+            is_active=True,
         )

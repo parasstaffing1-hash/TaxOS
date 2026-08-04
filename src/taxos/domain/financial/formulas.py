@@ -14,40 +14,74 @@ def apply_bankers_rounding(amount: Decimal, precision: int = 2) -> Decimal:
     return amount.quantize(quantizer, rounding=ROUND_HALF_EVEN)
 
 
-def calculate_progressive_tax(income: Decimal, brackets: list[TaxBracket]) -> tuple[Decimal, list[dict[str, Any]]]:
+def calculate_progressive_tax(
+    income: Decimal, brackets: list[TaxBracket]
+) -> tuple[Decimal, list[dict[str, Any]]]:
     """
     Calculates tax based on progressive marginal brackets.
-    
+
     Returns:
         A tuple of (total_tax, breakdown_details).
     """
+    if income < 0:
+        raise ValueError("Income cannot be negative")
+
     total_tax = Decimal("0.0")
-    details = []
+    details: list[dict[str, Any]] = []
 
     # Ensure brackets are sorted by minimum amount
     sorted_brackets = sorted(brackets, key=lambda b: b.min_amount)
 
-    for bracket in sorted_brackets:
-        if income <= bracket.min_amount:
-            break
+    # Some rule sources describe each bracket as a segment, while others provide
+    # the cumulative tax at the lower bound in ``fixed_amount``.  Supporting both
+    # formats keeps the engine interoperable without duplicating tax formulas.
+    uses_cumulative_amounts = any(bracket.fixed_amount != 0 for bracket in sorted_brackets)
 
-        upper_bound = bracket.max_amount if bracket.max_amount is not None else income
-        taxable_in_bracket = min(income, upper_bound) - bracket.min_amount
-        
-        # Apply rate and fixed amount
-        bracket_tax = (taxable_in_bracket * bracket.rate) + bracket.fixed_amount
-        bracket_tax = apply_bankers_rounding(bracket_tax)
-        
-        total_tax += bracket_tax
+    if uses_cumulative_amounts:
+        active_bracket = sorted_brackets[-1]
+        for bracket in sorted_brackets:
+            if income <= bracket.min_amount:
+                break
+            active_bracket = bracket
+            if bracket.max_amount is not None and income <= bracket.max_amount:
+                break
 
-        details.append({
-            "min_amount": str(bracket.min_amount),
-            "max_amount": str(bracket.max_amount) if bracket.max_amount else "infinity",
-            "rate": str(bracket.rate),
-            "fixed_amount": str(bracket.fixed_amount),
-            "taxable_in_bracket": str(taxable_in_bracket),
-            "tax": str(bracket_tax),
-        })
+        taxable_in_bracket = max(Decimal("0"), income - active_bracket.min_amount)
+        total_tax = apply_bankers_rounding(
+            active_bracket.fixed_amount + taxable_in_bracket * active_bracket.rate
+        )
+        brackets_to_report = [active_bracket]
+    else:
+        brackets_to_report = sorted_brackets
+        for bracket in sorted_brackets:
+            if income <= bracket.min_amount:
+                break
+
+            upper_bound = bracket.max_amount if bracket.max_amount is not None else income
+            taxable_in_bracket = min(income, upper_bound) - bracket.min_amount
+            bracket_tax = apply_bankers_rounding(taxable_in_bracket * bracket.rate)
+            total_tax += bracket_tax
+
+    for bracket in brackets_to_report:
+        taxable_in_bracket = max(
+            Decimal("0"),
+            min(income, bracket.max_amount or income) - bracket.min_amount,
+        )
+        bracket_tax = apply_bankers_rounding(
+            (bracket.fixed_amount + taxable_in_bracket * bracket.rate)
+            if uses_cumulative_amounts
+            else taxable_in_bracket * bracket.rate
+        )
+        details.append(
+            {
+                "min_amount": str(bracket.min_amount),
+                "max_amount": str(bracket.max_amount) if bracket.max_amount else "infinity",
+                "rate": str(bracket.rate),
+                "fixed_amount": str(bracket.fixed_amount),
+                "taxable_in_bracket": str(taxable_in_bracket),
+                "tax": str(bracket_tax),
+            }
+        )
 
     return total_tax, details
 
@@ -58,11 +92,14 @@ def calculate_flat_tax(income: Decimal, rate: Decimal) -> Decimal:
 
 
 def calculate_payroll_tax(
-    income: Decimal, employee_rate: Decimal, employer_rate: Decimal, wage_base_limit: Decimal | None
+    income: Decimal,
+    employee_rate: Decimal,
+    employer_rate: Decimal,
+    wage_base_limit: Decimal | None,
 ) -> tuple[Decimal, Decimal]:
     """
     Calculates payroll tax respecting wage base limits.
-    
+
     Returns:
         A tuple of (employee_tax, employer_tax).
     """

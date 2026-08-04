@@ -5,7 +5,7 @@ Generates a structured XML representation of calculator results.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 from xml.etree.ElementTree import Element, SubElement, tostring
 
@@ -27,7 +27,7 @@ class XMLDocumentGenerator:
         root = Element("TaxReport")
         root.set("calculator", calculator_config.slug)
         root.set("template", template.id)
-        root.set("generated", datetime.now(timezone.utc).isoformat())
+        root.set("generated", datetime.now(UTC).isoformat())
 
         # Meta
         meta = SubElement(root, "Meta")

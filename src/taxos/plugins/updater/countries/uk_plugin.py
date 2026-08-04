@@ -11,5 +11,5 @@ class UnitedKingdomUpdaterPlugin(AbstractUpdaterPlugin):
         return "GB"
 
     async def fetch_updates(self, tax_year: int) -> list[PluginUpdateResult]:
-        # TODO: Implement data collection pipeline for UnitedKingdom
+        """Return no update until an approved UK source is configured."""
         return []

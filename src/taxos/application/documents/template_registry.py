@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any
 
 import structlog
 
@@ -103,8 +102,8 @@ class TemplateRegistry:
                 template = ReportTemplateConfig(**data)
                 self._templates[template.id] = template
                 logger.debug("loaded_report_template", id=template.id, name=template.name)
-            except Exception as e:
-                logger.error("template_load_error", file=str(file_path), error=str(e))
+            except Exception:
+                logger.exception("template_load_error", file=str(file_path))
 
     def get(self, template_id: str) -> ReportTemplateConfig | None:
         """Retrieve a template by ID."""

@@ -1,0 +1,27 @@
+{
+  "slug": "ctc-calculator",
+  "title": "CTC Calculator",
+  "description": "Calculate Cost To Company (CTC) and see what the employee actually takes home.",
+  "inputs": [
+    { "id": "gross_income", "label": "Base Salary", "type": "currency", "required": true, "default": 100000 },
+    { "id": "country", "label": "Country Code", "type": "text", "required": true, "default": "US" },
+    { "id": "state", "label": "State Code", "type": "text", "required": false, "default": "CA" }
+  ],
+  "formulas": [
+    { "id": "tax_data", "expression": "tax(gross_income, country, state)", "is_result": false },
+    { "id": "employer_cost", "label": "Employer Cost", "expression": "tax_data['employer_cost']", "format": "currency", "is_result": true },
+    { "id": "total_ctc", "label": "Total CTC", "expression": "gross_income + employer_cost", "format": "currency", "is_result": true },
+    { "id": "net_income", "label": "Employee Take Home", "expression": "tax_data['net_income']['annual']", "format": "currency", "is_result": true }
+  ],
+  "output": {
+    "summary_cards": ["total_ctc", "gross_income", "net_income"],
+    "charts": [
+      {
+        "id": "ctc_breakdown",
+        "type": "bar",
+        "title": "CTC Breakdown",
+        "data_sources": ["total_ctc", "gross_income", "net_income"]
+      }
+    ]
+  }
+}

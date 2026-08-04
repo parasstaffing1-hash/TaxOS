@@ -1,0 +1,26 @@
+{
+  "slug": "net-to-gross-calculator",
+  "title": "Net to Gross Calculator",
+  "description": "Enter your target take-home pay, and we will calculate the gross salary required to achieve it.",
+  "inputs": [
+    { "id": "target_net", "label": "Target Take-Home Pay (Annual)", "type": "currency", "required": true, "default": 75000 },
+    { "id": "country", "label": "Country Code", "type": "text", "required": true, "default": "US" },
+    { "id": "state", "label": "State Code", "type": "text", "required": false, "default": "CA" }
+  ],
+  "formulas": [
+    { "id": "tax_data", "expression": "net_to_gross(target_net, country, state)", "is_result": false },
+    { "id": "required_gross", "label": "Required Gross Salary", "expression": "tax_data['gross_income']['annual']", "format": "currency", "is_result": true },
+    { "id": "taxes", "label": "Estimated Taxes", "expression": "tax_data['total_tax']", "format": "currency", "is_result": true }
+  ],
+  "output": {
+    "summary_cards": ["required_gross", "target_net", "taxes"],
+    "charts": [
+      {
+        "id": "gross_vs_net",
+        "type": "pie",
+        "title": "Gross Income Breakdown",
+        "data_sources": ["target_net", "taxes"]
+      }
+    ]
+  }
+}

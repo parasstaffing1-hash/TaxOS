@@ -1,0 +1,36 @@
+jurisdiction: UK
+level: country
+tax_year: 2024
+currency: GBP
+
+rules:
+  single:
+    - type: progressive
+      name: Income Tax (England/Wales/NI)
+      brackets:
+        - min_amount: 0
+          max_amount: 12570
+          rate: 0.0
+        - min_amount: 12570
+          max_amount: 50270
+          rate: 0.20
+        - min_amount: 50270
+          max_amount: 125140
+          rate: 0.40
+        - min_amount: 125140
+          rate: 0.45
+  all:
+    - type: payroll
+      name: National Insurance Class 1
+      employee_rate: 0.08
+      employer_rate: 0.138
+      wage_base_limit: 50270
+    - type: vat
+      name: UK VAT
+      standard_rate: 0.20
+      reduced_rates:
+        energy: 0.05
+      exempt_categories:
+        - food
+        - books
+        - children_clothing

@@ -1,0 +1,79 @@
+{
+  "slug": "income-tax-calculator",
+  "title": "Income Tax Calculator",
+  "description": "Estimate your federal and state income taxes based on your gross income.",
+  "inputs": [
+    {
+      "id": "gross_income",
+      "label": "Gross Annual Income",
+      "type": "currency",
+      "required": true,
+      "default": 75000,
+      "min_value": 0,
+      "help_text": "Your total income before any taxes or deductions."
+    },
+    {
+      "id": "standard_deduction",
+      "label": "Standard Deduction",
+      "type": "currency",
+      "required": false,
+      "default": 13850,
+      "min_value": 0,
+      "help_text": "The standard deduction amount for your filing status."
+    },
+    {
+      "id": "tax_rate",
+      "label": "Effective Tax Rate (%)",
+      "type": "percentage",
+      "required": true,
+      "default": 22,
+      "min_value": 0,
+      "max_value": 100,
+      "help_text": "Your estimated effective tax rate as a percentage."
+    }
+  ],
+  "formulas": [
+    {
+      "id": "taxable_income",
+      "label": "Taxable Income",
+      "expression": "gross_income - standard_deduction",
+      "format": "currency",
+      "is_result": false
+    },
+    {
+      "id": "total_tax",
+      "label": "Estimated Total Tax",
+      "expression": "taxable_income * (tax_rate / 100)",
+      "format": "currency",
+      "is_result": true
+    },
+    {
+      "id": "take_home_pay",
+      "label": "Take Home Pay",
+      "expression": "gross_income - total_tax",
+      "format": "currency",
+      "is_result": true
+    }
+  ],
+  "output": {
+    "summary_cards": [
+      "take_home_pay",
+      "total_tax",
+      "taxable_income"
+    ],
+    "charts": [
+      {
+        "id": "income_breakdown",
+        "type": "pie",
+        "title": "Income Breakdown",
+        "data_sources": ["take_home_pay", "total_tax"]
+      },
+      {
+        "id": "comparison",
+        "type": "bar",
+        "title": "Gross vs Net",
+        "data_sources": ["gross_income", "take_home_pay"]
+      }
+    ]
+  }
+}

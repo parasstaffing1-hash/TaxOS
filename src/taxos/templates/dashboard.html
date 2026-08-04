@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaxOS Auto Updater Dashboard</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f3f4f6; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        h1 { margin: 0; color: #111827; }
+        .btn { background: #3b82f6; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .btn:hover { background: #2563eb; }
+        .btn-danger { background: #ef4444; }
+        .btn-danger:hover { background: #dc2626; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .card h2 { margin-top: 0; font-size: 1.2rem; border-bottom: 1px solid #e5e7eb; padding-bottom: 10px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { text-align: left; padding: 8px; border-bottom: 1px solid #e5e7eb; }
+        .status-badge { display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: bold; }
+        .status-success { background: #d1fae5; color: #065f46; }
+        .status-running { background: #fef3c7; color: #92400e; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>TaxOS Auto Updater Dashboard</h1>
+            <div>
+                <form action="/api/v1/updater/run" method="post" style="display:inline;">
+                    <button type="submit" class="btn">Force Manual Update</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="grid">
+            <div class="card">
+                <h2>System Status</h2>
+                <p><strong>Current Tax Year:</strong> {{ current_year }}</p>
+                <p><strong>Last Update Job:</strong> {% if last_job %}{{ last_job.started_at }} - <span class="status-badge status-{{ last_job.status.lower() }}">{{ last_job.status }}</span>{% else %}Never{% endif %}</p>
+                <p><strong>Next Scheduled Update:</strong> 03:00 AM (Daily)</p>
+            </div>
+
+            <div class="card">
+                <h2>Active Versions</h2>
+                <table>
+                    <tr>
+                        <th>Jurisdiction</th>
+                        <th>Year</th>
+                        <th>Version Hash</th>
+                        <th>Actions</th>
+                    </tr>
+                    {% for version in active_versions %}
+                    <tr>
+                        <td>{{ version.jurisdiction }} ({{ version.level }})</td>
+                        <td>{{ version.tax_year }}</td>
+                        <td><span title="{{ version.version_hash }}">{{ version.version_hash[:8] }}...</span></td>
+                        <td>
+                            <form action="/api/v1/updater/rollback/{{ version.version_hash }}" method="post" style="display:inline;">
+                                <button type="submit" class="btn btn-danger" style="padding: 3px 8px; font-size: 0.8rem;">Rollback</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% if not active_versions %}
+                    <tr><td colspan="4">No active versions found.</td></tr>
+                    {% endif %}
+                </table>
+            </div>
+            
+            <div class="card" style="grid-column: 1 / -1;">
+                <h2>Recent Update Logs</h2>
+                <table>
+                    <tr>
+                        <th>Time</th>
+                        <th>Level</th>
+                        <th>Message</th>
+                    </tr>
+                    {% for log in logs %}
+                    <tr>
+                        <td>{{ log.timestamp }}</td>
+                        <td>{{ log.level }}</td>
+                        <td>{{ log.message }}</td>
+                    </tr>
+                    {% endfor %}
+                    {% if not logs %}
+                    <tr><td colspan="3">No logs available.</td></tr>
+                    {% endif %}
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

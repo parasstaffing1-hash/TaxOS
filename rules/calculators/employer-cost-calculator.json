@@ -1,0 +1,26 @@
+{
+  "slug": "employer-cost-calculator",
+  "title": "Employer Cost Calculator",
+  "description": "Calculate the total cost of hiring an employee, including payroll taxes and employer contributions.",
+  "inputs": [
+    { "id": "gross_income", "label": "Base Salary", "type": "currency", "required": true, "default": 100000 },
+    { "id": "country", "label": "Country Code", "type": "text", "required": true, "default": "US" },
+    { "id": "state", "label": "State Code", "type": "text", "required": false, "default": "CA" }
+  ],
+  "formulas": [
+    { "id": "tax_data", "expression": "tax(gross_income, country, state)", "is_result": false },
+    { "id": "employer_cost", "label": "Employer Cost (Taxes/Contributions)", "expression": "tax_data['employer_cost']", "format": "currency", "is_result": true },
+    { "id": "total_cost", "label": "Total Hiring Cost", "expression": "gross_income + employer_cost", "format": "currency", "is_result": true }
+  ],
+  "output": {
+    "summary_cards": ["total_cost", "employer_cost", "gross_income"],
+    "charts": [
+      {
+        "id": "cost_breakdown",
+        "type": "pie",
+        "title": "Cost Breakdown",
+        "data_sources": ["gross_income", "employer_cost"]
+      }
+    ]
+  }
+}

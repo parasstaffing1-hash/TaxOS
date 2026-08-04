@@ -1,0 +1,48 @@
+# ── Python ────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+
+# ── Virtual environments ─────────────────────────────────────────
+.venv/
+venv/
+ENV/
+
+# ── uv ───────────────────────────────────────────────────────────
+# Keep uv.lock tracked in git
+# .python-version is tracked
+
+# ── IDE ──────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ── Environment ──────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+
+# ── Testing ──────────────────────────────────────────────────────
+.coverage
+htmlcov/
+coverage.xml
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ── Docker ───────────────────────────────────────────────────────
+docker-compose.override.local.yml
+
+# ── Database ─────────────────────────────────────────────────────
+*.db
+*.sqlite3

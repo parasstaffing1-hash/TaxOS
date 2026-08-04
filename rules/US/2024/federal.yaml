@@ -1,0 +1,39 @@
+jurisdiction: US
+level: country
+tax_year: 2024
+currency: USD
+valid_from: 2024-01-01
+valid_to: 2024-12-31
+
+rules:
+  single:
+    - type: progressive
+      name: Federal Income Tax
+      brackets:
+        - min_amount: 0
+          max_amount: 11600
+          rate: 0.10
+        - min_amount: 11600
+          max_amount: 47150
+          rate: 0.12
+          fixed_amount: 1160
+        - min_amount: 47150
+          max_amount: 100525
+          rate: 0.22
+          fixed_amount: 5426
+        - min_amount: 100525
+          rate: 0.24
+          fixed_amount: 17168.50
+    - type: deduction
+      name: Standard Deduction
+      amount: 14600
+  all:
+    - type: payroll
+      name: Social Security
+      employee_rate: 0.062
+      employer_rate: 0.062
+      wage_base_limit: 168600
+    - type: payroll
+      name: Medicare
+      employee_rate: 0.0145
+      employer_rate: 0.0145

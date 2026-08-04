@@ -1,0 +1,22 @@
+{
+  "test_cases": [
+    {
+      "name": "US California Single 100k",
+      "inputs": {
+        "calculator_type": "after-tax-salary-calculator",
+        "tax_year": 2024,
+        "country": "US",
+        "state": "CA",
+        "gross_amount": 100000.0,
+        "pay_frequency": "annual",
+        "filing_status": "single"
+      },
+      "expected": {
+        "gross_pay": 100000.0,
+        "total_tax": 27351.05,
+        "net_pay": 72648.95,
+        "effective_tax_rate": 0.2735
+      }
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "slug": "paycheck-calculator",
+  "title": "Paycheck Calculator",
+  "description": "Calculate your exact take-home pay by evaluating federal, state, and local taxes.",
+  "inputs": [
+    { "id": "gross_income", "label": "Annual Salary", "type": "currency", "required": true, "default": 100000 },
+    { "id": "country", "label": "Country Code (e.g. US, UK)", "type": "text", "required": true, "default": "US" },
+    { "id": "state", "label": "State Code (e.g. CA, NY)", "type": "text", "required": false, "default": "CA" }
+  ],
+  "formulas": [
+    { "id": "tax_data", "expression": "tax(gross_income, country, state)", "is_result": false },
+    { "id": "net_income", "label": "Annual Take Home Pay", "expression": "tax_data['net_income']['annual']", "format": "currency", "is_result": true },
+    { "id": "total_tax", "label": "Total Taxes", "expression": "tax_data['total_tax']", "format": "currency", "is_result": true },
+    { "id": "effective_rate", "label": "Effective Tax Rate", "expression": "tax_data['effective_tax_rate']", "format": "percentage", "is_result": true }
+  ],
+  "output": {
+    "summary_cards": ["net_income", "total_tax", "effective_rate"],
+    "charts": [
+      {
+        "id": "breakdown",
+        "type": "pie",
+        "title": "Salary Breakdown",
+        "data_sources": ["net_income", "total_tax"]
+      }
+    ]
+  }
+}

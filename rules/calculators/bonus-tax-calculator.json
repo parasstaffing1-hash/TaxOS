@@ -1,0 +1,28 @@
+{
+  "slug": "bonus-tax-calculator",
+  "title": "Bonus Tax Calculator",
+  "description": "Calculate how much of your bonus you will actually take home after supplemental taxes.",
+  "inputs": [
+    { "id": "bonus_amount", "label": "Bonus Amount", "type": "currency", "required": true, "default": 10000 },
+    { "id": "base_salary", "label": "Base Salary (Optional)", "type": "currency", "required": false, "default": 100000 },
+    { "id": "country", "label": "Country Code", "type": "text", "required": true, "default": "US" },
+    { "id": "state", "label": "State Code", "type": "text", "required": false, "default": "CA" }
+  ],
+  "formulas": [
+    { "id": "tax_data", "expression": "tax(bonus_amount + base_salary, country, state)", "is_result": false },
+    { "id": "base_tax_data", "expression": "tax(base_salary, country, state)", "is_result": false },
+    { "id": "bonus_taxes", "label": "Taxes on Bonus", "expression": "tax_data['total_tax'] - base_tax_data['total_tax']", "format": "currency", "is_result": true },
+    { "id": "net_bonus", "label": "Take Home Bonus", "expression": "bonus_amount - bonus_taxes", "format": "currency", "is_result": true }
+  ],
+  "output": {
+    "summary_cards": ["net_bonus", "bonus_taxes", "bonus_amount"],
+    "charts": [
+      {
+        "id": "bonus_breakdown",
+        "type": "pie",
+        "title": "Bonus Breakdown",
+        "data_sources": ["net_bonus", "bonus_taxes"]
+      }
+    ]
+  }
+}

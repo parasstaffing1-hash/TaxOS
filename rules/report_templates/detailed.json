@@ -1,0 +1,59 @@
+{
+  "id": "detailed",
+  "name": "Detailed Report",
+  "description": "Comprehensive report with full inputs, all formulas, multiple charts, notes, and appendix.",
+  "version": "1.0",
+  "orientation": "portrait",
+  "page_size": "A4",
+  "template_style": "detailed",
+  "branding": {
+    "company_name": "TaxOS",
+    "primary_color": "#4f46e5",
+    "secondary_color": "#6b7280",
+    "accent_color": "#059669",
+    "footer_text": "TaxOS Detailed Tax Calculation Report"
+  },
+  "locale": {
+    "language": "en",
+    "currency_symbol": "$",
+    "currency_code": "USD",
+    "date_format": "%B %d, %Y",
+    "number_format": "#,##0.00"
+  },
+  "sections": [
+    { "id": "cover", "type": "cover_page", "title": "Detailed Tax Calculation Report" },
+    { "id": "summary", "type": "summary_cards", "title": "Key Results" },
+    { "id": "inputs", "type": "inputs_table", "title": "Your Inputs" },
+    { "id": "breakdown", "type": "breakdown_table", "title": "Complete Calculation Breakdown" },
+    { "id": "pb1", "type": "page_break" },
+    {
+      "id": "pie",
+      "type": "chart",
+      "title": "Tax Distribution",
+      "chart": { "id": "det_pie", "type": "pie", "title": "Where Your Money Goes", "data_sources": [] }
+    },
+    {
+      "id": "bar",
+      "type": "chart",
+      "title": "Income Comparison",
+      "chart": { "id": "det_bar", "type": "bar", "title": "Gross vs Net Comparison", "data_sources": [] }
+    },
+    {
+      "id": "stacked",
+      "type": "chart",
+      "title": "Stacked View",
+      "chart": { "id": "det_stacked", "type": "stacked_bar", "title": "Tax Component Breakdown", "data_sources": [] }
+    },
+    {
+      "id": "notes",
+      "type": "notes",
+      "title": "Notes",
+      "content": "All calculations use the tax rules loaded at the time of report generation. Tax brackets and rates may change. Please verify with official government sources."
+    },
+    {
+      "id": "disclaimer",
+      "type": "disclaimer",
+      "content": "DISCLAIMER: This report is generated for informational purposes only. It does not constitute professional tax, legal, or financial advice. TaxOS and its operators are not liable for any decisions made based on this report. Always consult a qualified tax professional."
+    }
+  ]
+}

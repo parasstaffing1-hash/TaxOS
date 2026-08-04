@@ -1,0 +1,28 @@
+jurisdiction: CA
+level: state
+tax_year: 2024
+currency: USD
+
+rules:
+  single:
+    - type: progressive
+      name: California State Income Tax
+      brackets:
+        - min_amount: 0
+          max_amount: 10412
+          rate: 0.01
+        - min_amount: 10412
+          max_amount: 24684
+          rate: 0.02
+          fixed_amount: 104.12
+        - min_amount: 24684
+          rate: 0.04
+          fixed_amount: 389.56
+    - type: deduction
+      name: CA Standard Deduction
+      amount: 5363
+  all:
+    - type: payroll
+      name: State Disability Insurance (SDI)
+      employee_rate: 0.011
+      employer_rate: 0.0

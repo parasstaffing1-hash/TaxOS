@@ -5,7 +5,7 @@ from __future__ import annotations
 import datetime
 from typing import Any
 
-from sqlalchemy import JSON, Boolean, DateTime, Float, ForeignKey, String, Text
+from sqlalchemy import JSON, Boolean, DateTime, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from taxos.infrastructure.database.base import Base
@@ -17,8 +17,12 @@ class TaxpayerProfileModel(Base):
     __tablename__ = "taxpayer_profiles"
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
-    organization_id: Mapped[str] = mapped_column(String(64), index=True, nullable=False)
-    user_id: Mapped[str] = mapped_column(String(64), index=True, nullable=False)
+    organization_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("organizations.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    user_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False
+    )
 
     taxpayer_name: Mapped[str] = mapped_column(String(255), nullable=False)
     pan_encrypted: Mapped[str | None] = mapped_column(String(512), nullable=True)
@@ -46,10 +50,14 @@ class SavedCalculationModel(Base):
     __tablename__ = "saved_calculations"
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
-    organization_id: Mapped[str] = mapped_column(String(64), index=True, nullable=False)
-    user_id: Mapped[str] = mapped_column(String(64), index=True, nullable=False)
+    organization_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("organizations.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    user_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False
+    )
     taxpayer_profile_id: Mapped[str | None] = mapped_column(
-        String(64), ForeignKey("taxpayer_profiles.id"), nullable=True
+        String(64), ForeignKey("taxpayer_profiles.id", ondelete="SET NULL"), nullable=True
     )
 
     tool_id: Mapped[str] = mapped_column(String(128), index=True, nullable=False)
@@ -77,18 +85,29 @@ class ComplianceTaskModel(Base):
     __tablename__ = "compliance_tasks"
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
-    organization_id: Mapped[str] = mapped_column(String(64), index=True, nullable=False)
+    organization_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("organizations.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    user_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False
+    )
     taxpayer_profile_id: Mapped[str | None] = mapped_column(
-        String(64), ForeignKey("taxpayer_profiles.id"), nullable=True
+        String(64), ForeignKey("taxpayer_profiles.id", ondelete="SET NULL"), nullable=True
     )
 
-    obligation_name: Mapped[str] = mapped_column(String(255), nullable=False)
-    tax_family: Mapped[str] = mapped_column(String(64), nullable=False)
-    due_date: Mapped[str] = mapped_column(String(32), nullable=False)
+    obligation_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    obligation_name: Mapped[str] = mapped_column(String(255), default="", nullable=False)
+    tax_family: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    due_date: Mapped[str | None] = mapped_column(String(32), nullable=True)
     status: Mapped[str] = mapped_column(String(32), default="pending", nullable=False)
     is_completed: Mapped[bool] = mapped_column(Boolean, default=False)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.datetime.now(datetime.UTC)
+    )
+    updated_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.datetime.now(datetime.UTC),
+        onupdate=lambda: datetime.datetime.now(datetime.UTC),
     )

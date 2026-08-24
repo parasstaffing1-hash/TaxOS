@@ -22,6 +22,7 @@ def test_production_hides_docs_and_internal_operational_routes(monkeypatch) -> N
         ENVIRONMENT="production",
         DATABASE_URL="sqlite+aiosqlite:///",
         SECRET_KEY="a-production-secret-key-that-is-longer-than-32-characters",
+        FIELD_ENCRYPTION_KEY="a-production-field-key-that-is-longer-than-32-chars",
         ALLOWED_ORIGINS=["https://taxos.example"],
         ENABLE_INTERNAL_TOOLS=False,
     )

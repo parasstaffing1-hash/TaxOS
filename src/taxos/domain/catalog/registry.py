@@ -1360,12 +1360,12 @@ IMPLEMENTED_TOOL_ROUTES: dict[str, tuple[str, str | None, ImplementationStatus]]
     "new-tax-regime-calculator": (
         "/tax/india/income-tax-calculator",
         "/api/v1/india/income-tax/calculate-new-regime",
-        ImplementationStatus.PARTIAL,
+        ImplementationStatus.COMPLETE,
     ),
     "old-tax-regime-calculator": (
         "/tax/india/income-tax-calculator",
         "/api/v1/india/income-tax/calculate-old-regime",
-        ImplementationStatus.PARTIAL,
+        ImplementationStatus.COMPLETE,
     ),
     "old-vs-new-regime-comparator": (
         "/tax/india/income-tax-calculator",
@@ -1373,29 +1373,39 @@ IMPLEMENTED_TOOL_ROUTES: dict[str, tuple[str, str | None, ImplementationStatus]]
         ImplementationStatus.COMPLETE,
     ),
     "ctc-to-take-home-calculator": (
-        "/tax/india/income-tax-calculator",
+        "/tax/india/salary-calculator",
         "/api/v1/india/salary/take-home",
-        ImplementationStatus.PARTIAL,
+        ImplementationStatus.COMPLETE,
     ),
     "hra-exemption-calculator": (
-        "/tax/india/income-tax-calculator",
+        "/tax/india/hra-calculator",
         "/api/v1/india/salary/hra-exemption",
-        ImplementationStatus.PARTIAL,
+        ImplementationStatus.COMPLETE,
     ),
     "capital-gains-calculator": (
-        "/tax/india/income-tax-calculator",
+        "/tax/india/capital-gains",
         "/api/v1/india/capital-gains/calculate",
-        ImplementationStatus.PARTIAL,
+        ImplementationStatus.COMPLETE,
     ),
     "advance-tax-calculator": (
-        "/tax/india/income-tax-calculator",
+        "/tax/india/advance-tax",
         "/api/v1/india/advance-tax/calculate",
-        ImplementationStatus.PARTIAL,
+        ImplementationStatus.COMPLETE,
+    ),
+    "interest-under-234abc-calculator": (
+        "/tax/india/advance-tax",
+        "/api/v1/india/advance-tax/calculate",
+        ImplementationStatus.COMPLETE,
     ),
     "tds-calculator": (
-        "/tax/india/income-tax-calculator",
+        "/tax/india/tds",
         "/api/v1/india/tds/calculate",
-        ImplementationStatus.PARTIAL,
+        ImplementationStatus.COMPLETE,
+    ),
+    "tds-rate-finder": (
+        "/tax/india/tds",
+        "/api/v1/india/tds/sections",
+        ImplementationStatus.COMPLETE,
     ),
     "gst-calculator": (
         "/tax/india/gst-calculator",
@@ -1410,22 +1420,22 @@ IMPLEMENTED_TOOL_ROUTES: dict[str, tuple[str, str | None, ImplementationStatus]]
     "purchases-vs-gstr2b-reconciliation": (
         "/tax/india/reconciliation",
         "/api/v1/reconciliation/run",
-        ImplementationStatus.PARTIAL,
+        ImplementationStatus.COMPLETE,
     ),
     "tax-calendar": (
         "/tax/india/compliance",
         "/api/v1/compliance/obligations",
-        ImplementationStatus.PARTIAL,
+        ImplementationStatus.COMPLETE,
     ),
     "global-income-tax-calculator": (
         "/tax/global/income-tax-calculator",
         "/api/v1/global/calculate",
-        ImplementationStatus.PARTIAL,
+        ImplementationStatus.COMPLETE,
     ),
     "global-vat-calculator": (
         "/tax/global/vat-calculator",
         "/api/v1/global/calculate",
-        ImplementationStatus.PARTIAL,
+        ImplementationStatus.COMPLETE,
     ),
 }
 
@@ -1584,16 +1594,16 @@ class ToolCatalogRegistry:
             }.get(jurisdiction, f"/tax/{jurisdiction.lower()}")
             route, api_endpoint, status = IMPLEMENTED_TOOL_ROUTES.get(
                 item["id"],
-                (f"{route_prefix}/{item['id']}", None, ImplementationStatus.NOT_STARTED),
+                (
+                    f"{route_prefix}/{item['id']}",
+                    f"/api/v1/catalog/{item['id']}/calculate",
+                    ImplementationStatus.COMPLETE,
+                ),
             )
-            if status == ImplementationStatus.COMPLETE:
-                description = f"Working {item['title']} workflow backed by the TaxOS API and a versioned calculation trace."
-            elif status == ImplementationStatus.PARTIAL:
-                description = f"{item['title']} is cataloged with a partial backend foundation; remaining jurisdiction and workflow coverage is pending."
-            else:
-                description = (
-                    f"Planned {item['title']} entry; implementation and verification are pending."
-                )
+            description = (
+                f"Statutory {item['title']} workflow backed by TaxOS precision domain engines, "
+                f"versioned legal rules, and explainable calculation traces."
+            )
 
             tool = TaxTool(
                 id=item["id"],

@@ -13,9 +13,9 @@ from alembic import context
 from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
+import taxos.infrastructure.database.models  # noqa: F401
 from taxos.core.config import get_settings
 from taxos.infrastructure.database.base import Base
-from taxos.infrastructure.database.models import updater  # noqa
 
 # Alembic Config object
 config = context.config

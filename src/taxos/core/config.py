@@ -45,6 +45,7 @@ class Settings(BaseSettings):
     # ── Security ─────────────────────────────────────────────────
     # Local-only fallback. Production validation below requires a provisioned key.
     SECRET_KEY: str = DEFAULT_DEVELOPMENT_SECRET
+    FIELD_ENCRYPTION_KEY: str | None = None
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
     AUTH_COOKIE_NAME: str = "taxos_access_token"
@@ -81,6 +82,14 @@ class Settings(BaseSettings):
                 or self.SECRET_KEY == DEFAULT_DEVELOPMENT_SECRET
             ):
                 raise ValueError("SECRET_KEY must be a random value of at least 32 characters")
+            if (
+                not self.FIELD_ENCRYPTION_KEY
+                or len(self.FIELD_ENCRYPTION_KEY) < MIN_SECRET_KEY_LENGTH
+                or self.FIELD_ENCRYPTION_KEY == DEFAULT_DEVELOPMENT_SECRET
+            ):
+                raise ValueError(
+                    "FIELD_ENCRYPTION_KEY must be configured with a random value of at least 32 characters in production"
+                )
             if self.DEBUG:
                 raise ValueError("DEBUG must be false in production")
             if not self.ALLOWED_ORIGINS:

@@ -33,9 +33,37 @@ export default function IndiaTaxHubPage() {
       <div className="mx-auto max-w-[1180px]">
         <Link href="/tax" className="inline-flex items-center gap-1.5 text-xs text-[#78736b]"><ArrowLeft className="h-3.5 w-3.5" /> All tax tools</Link>
         <div className="mt-10 max-w-2xl"><span className="text-xs font-medium text-[#6f9476]">INDIA TAX WORKSPACE</span><h1 className="mt-2 text-4xl font-semibold tracking-[-0.05em]">India tax tools</h1><p className="mt-3 text-sm leading-6 text-[#78736b]">Income tax, salary, capital gains, GST, TDS, reconciliation, and compliance workflows in one searchable workspace.</p></div>
-        <div className="relative mt-8 max-w-xl"><Search className="absolute left-3 top-3 h-4 w-4 text-[#9c978f]" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search India tools, sections, or tags" className="w-full rounded-xl border border-[#e8e6e1] bg-white py-2.5 pl-10 pr-4 text-sm outline-none focus:border-[#78736b]" /></div>
+        <div className="mt-8">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-stone-500 mb-3">
+            Featured Verified Calculators & Workflows
+          </h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+            {[
+              { title: "Income Tax & Regime Comparator", route: "/tax/india/income-tax-calculator", icon: "🏛️" },
+              { title: "CTC to Take-Home Salary", route: "/tax/india/salary-calculator", icon: "💼" },
+              { title: "HRA Exemption (Rule 2A)", route: "/tax/india/hra-calculator", icon: "🏠" },
+              { title: "Capital Gains (STCG/LTCG/VDA)", route: "/tax/india/capital-gains", icon: "📈" },
+              { title: "Advance Tax & Sec 234A/B/C", route: "/tax/india/advance-tax", icon: "🗓️" },
+              { title: "TDS / TCS Rate Finder", route: "/tax/india/tds", icon: "✂️" },
+              { title: "GST Calculator & Invoicing", route: "/tax/india/gst-calculator", icon: "🧾" },
+              { title: "Books vs Portal Reconciliation", route: "/tax/india/reconciliation", icon: "🔄" },
+              { title: "Compliance Obligations Tracker", route: "/tax/india/compliance", icon: "📋" },
+            ].map((f) => (
+              <Link
+                key={f.route}
+                href={f.route}
+                className="bg-white border border-[#e8e6e1] rounded-xl p-3.5 hover:border-emerald-600 hover:shadow-xs transition-all flex items-center gap-2.5 text-xs font-semibold text-stone-800 group"
+              >
+                <span className="text-xl">{f.icon}</span>
+                <span className="group-hover:text-emerald-700 transition-colors line-clamp-1">{f.title}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        <div className="relative mt-8 max-w-xl"><Search className="absolute left-3 top-3 h-4 w-4 text-[#9c978f]" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search all 845+ India tools, sections, or tags" className="w-full rounded-xl border border-[#e8e6e1] bg-white py-2.5 pl-10 pr-4 text-sm outline-none focus:border-[#78736b]" /></div>
         <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.slice(0, 60).map((tool) => <Link key={tool.id} href={tool.route} className="group rounded-xl border border-[#e8e6e1] bg-white p-5 hover:border-[#cbc7be] hover:shadow-sm"><div className="flex items-center justify-between"><span className="font-mono text-[11px] text-[#9c978f]">#{String(tool.number).padStart(3, "0")}</span><span className="text-[10px] uppercase text-[#9c978f]">{tool.status}</span></div><h2 className="mt-3 text-base font-semibold">{tool.title}</h2><p className="mt-1.5 line-clamp-3 text-xs leading-5 text-[#78736b]">{tool.description}</p><span className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-[#4f6f54]">View tool <ArrowRight className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" /></span></Link>)}
+          {filtered.slice(0, 60).map((tool) => <Link key={tool.id} href={tool.route} className="group rounded-xl border border-[#e8e6e1] bg-white p-5 hover:border-[#cbc7be] hover:shadow-sm"><div className="flex items-center justify-between"><span className="font-mono text-[11px] text-[#9c978f]">#{String(tool.number).padStart(3, "0")}</span><span className={`text-[10px] uppercase font-bold px-1.5 py-0.5 rounded ${tool.status === 'COMPLETE' ? 'bg-emerald-50 text-emerald-700' : 'bg-stone-100 text-stone-500'}`}>{tool.status}</span></div><h2 className="mt-3 text-base font-semibold">{tool.title}</h2><p className="mt-1.5 line-clamp-3 text-xs leading-5 text-[#78736b]">{tool.description}</p><span className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-[#4f6f54]">View tool <ArrowRight className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" /></span></Link>)}
         </div>
         <div className="mt-12 flex items-center gap-2 rounded-xl border border-[#dbe6dc] bg-[#f5f9f5] p-4 text-xs text-[#4f6f54]"><ShieldCheck className="h-4 w-4" /> Planned tools remain visible with honest status labels until their API and tests are complete.</div>
       </div>

@@ -7,7 +7,11 @@ and Health & Education Cess with complete explainability trace.
 
 from __future__ import annotations
 
+import uuid
 from decimal import ROUND_HALF_UP, Decimal
+from pathlib import Path
+
+import yaml
 
 from taxos.domain.financial.trace import (
     ConfidenceLevel,
@@ -22,6 +26,40 @@ from taxos.domain.india.models import (
     RegimeComparisonResult,
     TaxpayerAgeCategory,
 )
+from taxos.domain.rules import (
+    DeductionRule,
+    FilingStatus,
+    ProgressiveTaxRule,
+    TaxRuleSet,
+)
+
+
+def _load_india_ruleset(ay_or_year: str | int) -> TaxRuleSet | None:
+    """Load the versioned rule pack for India income tax."""
+    if isinstance(ay_or_year, str):
+        year_str = ay_or_year.split("-")[0] if "-" in ay_or_year else ay_or_year
+        try:
+            year_int = int(year_str)
+        except ValueError:
+            year_int = 2025
+    else:
+        year_int = int(ay_or_year)
+
+    candidates = [
+        Path(f"rules/IN/{ay_or_year}/income_tax.yaml"),
+        Path(f"rules/IN/{year_int}/income_tax.yaml"),
+        Path(f"rules/IN/{year_int}-{str(year_int + 1)[-2:]}/income_tax.yaml"),
+        Path(f"rules/IN/{year_int - 1}-{str(year_int)[-2:]}/income_tax.yaml"),
+        Path("rules/IN/2025-26/income_tax.yaml"),
+    ]
+    for p in candidates:
+        if p.exists():
+            try:
+                data = yaml.safe_load(p.read_text(encoding="utf-8"))
+                return TaxRuleSet.model_validate(data)
+            except (yaml.YAMLError, ValueError, OSError):
+                continue
+    return None
 
 
 def round_to_10(amount: Decimal) -> Decimal:
@@ -40,6 +78,10 @@ class IndiaIncomeTaxEngine:
     ) -> StandardTaxCalculationResponse:
         """Calculate income tax under Section 115BAC (New Tax Regime)."""
         ay = user_input.assessment_year or self.assessment_year
+        ruleset = _load_india_ruleset(ay)
+        rule_ver = f"IN-IT-{ruleset.tax_year}.1" if ruleset else f"IN-IT-{ay}.1"
+        eff_date = str(ruleset.valid_from) if (ruleset and ruleset.valid_from) else "2024-04-01"
+
         steps: list[ExplanationStep] = []
         assumptions: list[str] = [
             "Default tax regime under Section 115BAC(1A)",
@@ -48,9 +90,14 @@ class IndiaIncomeTaxEngine:
         ]
         warnings: list[str] = []
 
-        # 1. Standard Deduction on Salary
-        # AY 2025-26 & later (Budget 2024): ₹75,000; AY 2024-25 & earlier: ₹50,000
+        # 1. Standard Deduction on Salary from Rule Set
         std_deduction_limit = Decimal("75000.0") if ay >= "2025-26" else Decimal("50000.0")
+        if ruleset:
+            for rule in ruleset.get_rules_for_status(FilingStatus.SINGLE):
+                if isinstance(rule, DeductionRule) and "standard" in rule.name.lower():
+                    std_deduction_limit = rule.amount
+                    break
+
         std_deduction = min(user_input.salary_income, std_deduction_limit)
         net_salary = max(Decimal("0.0"), user_input.salary_income - std_deduction)
 
@@ -114,31 +161,34 @@ class IndiaIncomeTaxEngine:
             )
         )
 
-        # 4. Tax Slabs under Section 115BAC
-        # AY 2025-26+ (Budget 2024 Slabs):
-        # 0-3L: 0%, 3-7L: 5%, 7-10L: 10%, 10-12L: 15%, 12-15L: 20%, >15L: 30%
-        # AY 2024-25 (Finance Act 2023 Slabs):
-        # 0-3L: 0%, 3-6L: 5%, 6-9L: 10%, 9-12L: 15%, 12-15L: 20%, >15L: 30%
-        if ay >= "2025-26":
-            slabs_config = [
-                (Decimal("0.0"), Decimal("300000.0"), Decimal("0.0")),
-                (Decimal("300000.0"), Decimal("700000.0"), Decimal("0.05")),
-                (Decimal("700000.0"), Decimal("1000000.0"), Decimal("0.10")),
-                (Decimal("1000000.0"), Decimal("1200000.0"), Decimal("0.15")),
-                (Decimal("1200000.0"), Decimal("1500000.0"), Decimal("0.20")),
-                (Decimal("1500000.0"), None, Decimal("0.30")),
-            ]
-            rebate_threshold = Decimal("700000.0")
-        else:
-            slabs_config = [
-                (Decimal("0.0"), Decimal("300000.0"), Decimal("0.0")),
-                (Decimal("300000.0"), Decimal("600000.0"), Decimal("0.05")),
-                (Decimal("600000.0"), Decimal("900000.0"), Decimal("0.10")),
-                (Decimal("900000.0"), Decimal("1200000.0"), Decimal("0.15")),
-                (Decimal("1200000.0"), Decimal("1500000.0"), Decimal("0.20")),
-                (Decimal("1500000.0"), None, Decimal("0.30")),
-            ]
-            rebate_threshold = Decimal("700000.0")
+        # 4. Dynamic Tax Slabs from Rule Set
+        slabs_config: list[tuple[Decimal, Decimal | None, Decimal]] = []
+        if ruleset:
+            for rule in ruleset.get_rules_for_status(FilingStatus.SINGLE):
+                if isinstance(rule, ProgressiveTaxRule):
+                    slabs_config = [(b.min_amount, b.max_amount, b.rate) for b in rule.brackets]
+                    break
+
+        if not slabs_config:
+            if ay >= "2025-26":
+                slabs_config = [
+                    (Decimal("0.0"), Decimal("300000.0"), Decimal("0.0")),
+                    (Decimal("300000.0"), Decimal("700000.0"), Decimal("0.05")),
+                    (Decimal("700000.0"), Decimal("1000000.0"), Decimal("0.10")),
+                    (Decimal("1000000.0"), Decimal("1200000.0"), Decimal("0.15")),
+                    (Decimal("1200000.0"), Decimal("1500000.0"), Decimal("0.20")),
+                    (Decimal("1500000.0"), None, Decimal("0.30")),
+                ]
+            else:
+                slabs_config = [
+                    (Decimal("0.0"), Decimal("300000.0"), Decimal("0.0")),
+                    (Decimal("300000.0"), Decimal("600000.0"), Decimal("0.05")),
+                    (Decimal("600000.0"), Decimal("900000.0"), Decimal("0.10")),
+                    (Decimal("900000.0"), Decimal("1200000.0"), Decimal("0.15")),
+                    (Decimal("1200000.0"), Decimal("1500000.0"), Decimal("0.20")),
+                    (Decimal("1500000.0"), None, Decimal("0.30")),
+                ]
+        rebate_threshold = Decimal("700000.0")
 
         base_slab_tax = Decimal("0.0")
         slabs_breakdown: list[TaxSlabBreakdown] = []
@@ -310,23 +360,28 @@ class IndiaIncomeTaxEngine:
                 source_id="sec-115bac",
                 title="Special provisions relating to tax on income of individuals and Hindu undivided family",
                 section_or_rule="Section 115BAC(1A)",
-                act_name="Income-tax Act, 1961 as amended by Finance (No. 2) Act, 2024",
-                effective_date=f"AY {ay}",
+                act_name="Income-tax Act, 1961 as amended by Finance Act",
+                url="https://incometaxindia.gov.in",
+                effective_date=eff_date,
             ),
             OfficialSourceReference(
                 source_id="sec-87a",
                 title="Rebate of income-tax in case of certain individuals",
                 section_or_rule="Section 87A",
                 act_name="Income-tax Act, 1961",
+                url="https://incometaxindia.gov.in",
+                effective_date=eff_date,
             ),
         ]
 
         return StandardTaxCalculationResponse(
+            calculation_id=str(uuid.uuid4()),
             jurisdiction="IN",
             tax_type="income_tax",
             tax_year=user_input.financial_year,
             assessment_year=ay,
-            rule_version=f"IN-115BAC-{ay}.1",
+            effective_date=eff_date,
+            rule_version=rule_ver,
             taxpayer_type="individual",
             regime=TaxRegime.NEW,
             inputs={

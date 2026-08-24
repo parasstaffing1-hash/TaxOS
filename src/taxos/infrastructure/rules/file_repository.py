@@ -84,38 +84,51 @@ class FileBasedRuleRepository(AbstractRuleRepository):
         if not country_segment or (state and not state_segment) or (city and not city_segment):
             return None
 
-        base = self.base_dir / country_segment.upper() / str(year)
-
-        if city_segment and state_segment:
-            file_name = city_segment.lower()
-            path_candidates = [
-                base / state_segment.upper() / f"{file_name}.yaml",
-                base / state_segment.upper() / f"{file_name}.json",
-            ]
-        elif state_segment:
-            file_name = state_segment.lower()
-            path_candidates = [
-                base / state_segment.upper() / "state.yaml",
-                base / state_segment.upper() / "state.json",
-                base / f"{file_name}.yaml",
-                base / f"{file_name}.json",
-            ]
-        else:
-            path_candidates = [
-                base / "federal.yaml",
-                base / "federal.json",
-                base / "national.yaml",
-                base / "national.json",
-            ]
+        base_candidates = [
+            self.base_dir / country_segment.upper() / str(year),
+            self.base_dir / country_segment.upper() / f"{year}-{str(year + 1)[-2:]}",
+            self.base_dir / country_segment.upper() / f"{year - 1}-{str(year)[-2:]}",
+        ]
 
         resolved_base = self.base_dir.resolve()
-        for path in path_candidates:
-            try:
-                path.resolve().relative_to(resolved_base)
-            except ValueError:
+        for base in base_candidates:
+            if not base.exists():
                 continue
-            if path.exists():
-                return path
+            if city_segment and state_segment:
+                file_name = city_segment.lower()
+                path_candidates = [
+                    base / state_segment.upper() / f"{file_name}.yaml",
+                    base / state_segment.upper() / f"{file_name}.json",
+                ]
+            elif state_segment:
+                file_name = state_segment.lower()
+                path_candidates = [
+                    base / state_segment.upper() / "state.yaml",
+                    base / state_segment.upper() / "state.json",
+                    base / f"{file_name}.yaml",
+                    base / f"{file_name}.json",
+                ]
+            else:
+                path_candidates = [
+                    base / "income_tax.yaml",
+                    base / "income_tax.json",
+                    base / "federal.yaml",
+                    base / "federal.json",
+                    base / "national.yaml",
+                    base / "national.json",
+                    base / "gst.yaml",
+                    base / "gst.json",
+                    base / "country.yaml",
+                    base / "country.json",
+                ]
+
+            for path in path_candidates:
+                try:
+                    path.resolve().relative_to(resolved_base)
+                except ValueError:
+                    continue
+                if path.exists():
+                    return path
 
         return None
 

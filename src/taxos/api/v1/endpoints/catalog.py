@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException, Query
+from typing import Any
 
+from fastapi import APIRouter, Body, HTTPException, Query
+
+from taxos.application.tools.executor import get_universal_tool_executor
 from taxos.domain.catalog.models import (
     ImplementationStatus,
     TaxTool,
@@ -12,6 +15,7 @@ from taxos.domain.catalog.models import (
     ToolType,
 )
 from taxos.domain.catalog.registry import get_catalog_registry
+from taxos.domain.catalog.tool_specifications import get_master_spec_registry
 
 router = APIRouter(prefix="/catalog", tags=["Tool Catalog"])
 
@@ -81,3 +85,33 @@ async def get_tool_by_id(tool_id: str) -> TaxTool:
             status_code=404, detail=f"Tool with id '{tool_id}' not found in catalog."
         )
     return tool
+
+
+@router.get("/{tool_id}/schema")
+async def get_tool_schema(tool_id: str) -> dict[str, Any]:
+    """Retrieve the interactive UI input schema and legal source references for a tool."""
+    spec = get_master_spec_registry().get_spec(tool_id)
+    if not spec:
+        raise HTTPException(
+            status_code=404, detail=f"Tool specification for '{tool_id}' not found."
+        )
+    return spec.model_dump()
+
+
+@router.post("/{tool_id}/calculate")
+async def calculate_catalog_tool(
+    tool_id: str,
+    payload: dict[str, Any] = Body(default_factory=dict),
+    tax_year: str = Query(default="2024-25"),
+) -> dict[str, Any]:
+    """Execute authoritative tax calculation for any of the 845 catalog tools."""
+    try:
+        executor = get_universal_tool_executor()
+        result = executor.execute_tool(tool_id=tool_id, payload=payload, tax_year=tax_year)
+        return result.model_dump()
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(
+            status_code=422, detail=f"Calculation error for tool '{tool_id}': {exc}"
+        ) from exc

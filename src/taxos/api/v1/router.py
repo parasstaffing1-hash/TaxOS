@@ -18,7 +18,9 @@ from taxos.api.v1.endpoints import (
     india_tax,
     organizations,
     reconciliation,
+    saved_calculations,
     seo,
+    taxpayers,
     universal_calculator,
     updater,
     verification,
@@ -32,6 +34,8 @@ def create_v1_router(settings: Settings) -> APIRouter:
     router.include_router(health.router)
     router.include_router(auth.router)
     router.include_router(organizations.router)
+    router.include_router(taxpayers.router)
+    router.include_router(saved_calculations.router)
     router.include_router(catalog.router)
     router.include_router(india_tax.router)
     router.include_router(gst.router)

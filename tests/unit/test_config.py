@@ -24,6 +24,7 @@ class TestSettings:
             ENVIRONMENT="production",
             DATABASE_URL="sqlite+aiosqlite:///",
             SECRET_KEY="test-production-secret-key-32-characters",
+            FIELD_ENCRYPTION_KEY="test-production-field-key-32-chars",
             ALLOWED_ORIGINS=["https://tax.example.com"],
         )
         assert settings.is_production is True

@@ -23,8 +23,8 @@ def calculate_progressive_tax(
     Returns:
         A tuple of (total_tax, breakdown_details).
     """
-    if income < 0:
-        raise ValueError("Income cannot be negative")
+    if income <= 0:
+        return Decimal("0.0"), []
 
     total_tax = Decimal("0.0")
     details: list[dict[str, Any]] = []
@@ -33,14 +33,14 @@ def calculate_progressive_tax(
     sorted_brackets = sorted(brackets, key=lambda b: b.min_amount)
 
     # Some rule sources describe each bracket as a segment, while others provide
-    # the cumulative tax at the lower bound in ``fixed_amount``.  Supporting both
+    # the cumulative tax at the lower bound in ``fixed_amount``. Supporting both
     # formats keeps the engine interoperable without duplicating tax formulas.
     uses_cumulative_amounts = any(bracket.fixed_amount != 0 for bracket in sorted_brackets)
 
     if uses_cumulative_amounts:
-        active_bracket = sorted_brackets[-1]
+        active_bracket = sorted_brackets[0]
         for bracket in sorted_brackets:
-            if income <= bracket.min_amount:
+            if income < bracket.min_amount:
                 break
             active_bracket = bracket
             if bracket.max_amount is not None and income <= bracket.max_amount:

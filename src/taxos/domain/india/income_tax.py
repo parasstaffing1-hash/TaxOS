@@ -764,7 +764,7 @@ class IndiaIncomeTaxEngine:
             salary_income=Decimal("0.0"), other_sources_income=amount, assessment_year=ay
         )
         res = self.calculate_new_regime(fake_input)
-        return res.calculation["base_tax"]
+        return Decimal(str(res.calculation["base_tax"]))
 
     def _compute_tax_at_amount_old_regime(
         self, amount: Decimal, age_cat: TaxpayerAgeCategory
@@ -776,15 +776,15 @@ class IndiaIncomeTaxEngine:
             salary_income=Decimal("0.0"), other_sources_income=amount, age_category=age_cat
         )
         res = self.calculate_old_regime(fake_input)
-        return res.calculation["base_tax"]
+        return Decimal(str(res.calculation["base_tax"]))
 
     def _calculate_break_even_deductions(self, user_input: IndiaIncomeTaxInput) -> Decimal:
         """Calculate the total deductions needed in Old Regime to match New Regime tax."""
         new_res = self.calculate_new_regime(user_input)
-        target_tax = new_res.calculation["total_tax_liability"]
+        target_tax = Decimal(str(new_res.calculation["total_tax_liability"]))
 
         # If new tax is zero, break-even is the deduction to make taxable income <= 5L
-        gti = new_res.calculation["gross_total_income"]
+        gti = Decimal(str(new_res.calculation["gross_total_income"]))
         if target_tax == Decimal("0.0"):
             return max(Decimal("0.0"), gti - Decimal("500000.0"))
 

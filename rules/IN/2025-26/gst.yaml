@@ -1,0 +1,20 @@
+jurisdiction: IN
+level: country
+tax_year: 2025
+currency: INR
+valid_from: 2024-04-01
+valid_to: 2026-03-31
+
+rules:
+  all:
+    - type: vat
+      name: Goods and Services Tax
+      standard_rate: 0.18
+      reduced_rates:
+        zero: 0.00
+        essential: 0.05
+        standard_low: 0.12
+        luxury: 0.28
+      exempt_categories:
+        - fresh_unbranded_food
+        - healthcare_services

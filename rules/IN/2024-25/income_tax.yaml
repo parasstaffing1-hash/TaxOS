@@ -1,0 +1,42 @@
+jurisdiction: IN
+level: country
+tax_year: 2024
+currency: INR
+valid_from: 2024-04-01
+valid_to: 2025-03-31
+
+rules:
+  single:
+    - type: progressive
+      name: Section 115BAC New Tax Regime
+      brackets:
+        - min_amount: 0
+          max_amount: 300000
+          rate: 0.00
+          fixed_amount: 0
+        - min_amount: 300000
+          max_amount: 600000
+          rate: 0.05
+          fixed_amount: 0
+        - min_amount: 600000
+          max_amount: 900000
+          rate: 0.10
+          fixed_amount: 15000
+        - min_amount: 900000
+          max_amount: 1200000
+          rate: 0.15
+          fixed_amount: 45000
+        - min_amount: 1200000
+          max_amount: 1500000
+          rate: 0.20
+          fixed_amount: 90000
+        - min_amount: 1500000
+          rate: 0.30
+          fixed_amount: 150000
+    - type: deduction
+      name: Standard Deduction
+      amount: 50000
+  all:
+    - type: flat
+      name: Health and Education Cess
+      rate: 0.04

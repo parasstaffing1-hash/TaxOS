@@ -6,6 +6,11 @@ from taxos.infrastructure.database.models.iam import (
     User,
 )
 from taxos.infrastructure.database.models.seo import SEOInternalLink, SEORedirect, SEORoute
+from taxos.infrastructure.database.models.tax_models import (
+    ComplianceTaskModel,
+    SavedCalculationModel,
+    TaxpayerProfileModel,
+)
 from taxos.infrastructure.database.models.updater import (
     TaxCity,
     TaxCountry,
@@ -20,11 +25,13 @@ from taxos.infrastructure.database.models.updater import (
 __all__ = [
     "APIKey",
     "AuditLog",
+    "ComplianceTaskModel",
     "Organization",
     "OrganizationMember",
     "SEOInternalLink",
     "SEORedirect",
     "SEORoute",
+    "SavedCalculationModel",
     "TaxCity",
     "TaxCountry",
     "TaxRuleData",
@@ -33,5 +40,6 @@ __all__ = [
     "TaxState",
     "TaxUpdateJob",
     "TaxUpdateLog",
+    "TaxpayerProfileModel",
     "User",
 ]

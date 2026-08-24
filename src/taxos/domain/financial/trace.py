@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import uuid
 from datetime import UTC, datetime
 from decimal import Decimal
 from enum import StrEnum
@@ -71,6 +72,10 @@ class OfficialSourceReference(BaseModel):
 class StandardTaxCalculationResponse(BaseModel):
     """Standardized enterprise response model returned by all TaxOS engines."""
 
+    calculation_id: str = Field(
+        default_factory=lambda: str(uuid.uuid4()),
+        description="Unique UUID identifying this calculation instance",
+    )
     jurisdiction: str = Field(description="Country or jurisdiction code, e.g. 'IN', 'US', 'GB'")
     tax_type: str = Field(description="Type of tax, e.g. 'income_tax', 'salary_tax', 'gst'")
     tax_year: str = Field(
@@ -78,6 +83,9 @@ class StandardTaxCalculationResponse(BaseModel):
     )
     assessment_year: str | None = Field(
         default=None, description="Assessment year where applicable, e.g. '2025-26'"
+    )
+    effective_date: str = Field(
+        default="2024-04-01", description="Statutory effective date of applied rule set"
     )
     rule_version: str = Field(
         description="Unique version string of the applied rule pack, e.g. 'IN-IT-2025.1'"

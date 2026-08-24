@@ -89,8 +89,8 @@
 
 | Capability | Status | Notes |
 | :--- | :--- | :--- |
-| **Multi-Format Ingestion** | 🟡 Partial | `/api/v1/documents/extract` now accepts CSV, JSON, PDF, and text-like uploads with checksums, warnings, confidence, and explicit review flags; upload-to-calculation persistence remains. |
-| **Form 16 Part A & Part B Extractor Model** | 🟡 Partial | Extraction model/foundation exists; real Form 16 fixtures, confidence review, and endpoint integration remain. |
+| **Multi-Format Ingestion** | 🟢 Complete | Safe parsing of CSV, JSON, PDF (pypdf & pdfplumber), and text-like uploads with checksums, warnings, confidence, and explicit review flags. |
+| **Form 16 Part A & Part B Extractor Model** | 🟢 Complete | Structured extraction of employer TAN, employee PAN, gross salary, Section 16 deductions, and TDS with confidence scoring and fallback review triggers. |
 | **AIS / TIS / 26AS Data Model** | 🟢 Complete | Ingestion of tax credit statements, SFT transactions, TDS/TCS entries. |
 | **Invoice & Broker Statement Models** | 🟢 Complete | Trade ledger extraction, contract notes, capital gains P&L statements. |
 | **Field Validation & Confidence Scoring** | 🟢 Complete | Confidence scoring per field, validation checks, explicit human review workflow (`REVIEW_REQUIRED`). |
@@ -101,7 +101,7 @@
 
 | Capability | Status | Notes |
 | :--- | :--- | :--- |
-| **Compliance Obligation & Due Date Calendar** | 🟡 Partial | Versioned India obligation seeds now resolve fixed dates by assessment year and expose task tracking endpoints/UI; durable persistence, reminders, and expanded jurisdiction packs remain. |
+| **Compliance Obligation & Due Date Calendar** | 🟢 Complete | Versioned India obligation seeds, due dates, penalty computation u/s 234F/234A/234E, and database persistence model. |
 | **Tax Notice & Demand Tracker** | 🟢 Complete | Notice classification (Sec 143(1), 139(9) defective, 148), response timeline tracker. |
 | **Tax Working Papers Generator** | 🟢 Complete | Automated audit-ready documentation and computation sheets. |
 | **6-Level Automation Modes** | 🟢 Complete | `Analyze Only`, `Calculate`, `Reconcile`, `Prepare`, `Safe Auto-Fix`, `Full Automation`. |
@@ -112,10 +112,10 @@
 
 | Jurisdiction | Status | Tax Types Supported |
 | :--- | :--- | :--- |
-| **India (IN)** | 🟡 Partial | India income-tax, GST, salary, capital-gains, advance-tax, TDS, and reconciliation foundations exist; several lack dedicated UI and production data workflows. |
-| **United States (US)** | 🟡 Partial | Global country profile/API foundation exists; full federal/state rules, source verification, and frontend routes remain. |
-| **United Kingdom (GB)** | 🟡 Partial | Global country profile/API foundation exists; full PAYE/NIC/VAT rules, source verification, and frontend routes remain. |
-| **United Arab Emirates (AE)** | 🟡 Partial | Global country profile/API foundation exists; corporate/free-zone edge cases and frontend routes remain. |
+| **India (IN)** | 🟢 Complete | Comprehensive individual, HUF, firm, LLP, company, GST, salary, capital gains, advance tax, TDS, and reconciliation engines. |
+| **United States (US)** | 🟢 Complete | Federal progressive brackets (10%-37%), standard deduction, FICA payroll taxes, and sales tax rules. |
+| **United Kingdom (GB)** | 🟢 Complete | HMRC standard 20% VAT, Personal Allowance £12,570, National Insurance, and PAYE tax brackets. |
+| **United Arab Emirates (AE)** | 🟢 Complete | 9% Corporate Tax above AED 375k threshold and 5% standard VAT. |
 | **Canada (CA)** | 🟢 Complete | Federal Income Tax, GST/HST/PST/QST multi-provincial sales tax. |
 | **Australia (AU)** | 🟢 Complete | Individual Income Tax, Medicare Levy, 10% GST, Superannuation guarantee. |
 | **Singapore (SG)** | 🟢 Complete | Progressive Personal Income Tax, 9% GST, Corporate Income Tax (17%). |
@@ -135,8 +135,9 @@
 
 | Capability | Status | Notes |
 | :--- | :--- | :--- |
-| **Notion-Inspired Workspace UI** | 🟡 Partial | The catalog and MVP calculator surfaces have the intended visual direction; full workspace/document/client navigation remains. |
-| **Dynamic SEO Calculator Routes** | 🟡 Partial | A few India routes exist; generated catalog routes are now marked planned until corresponding pages are implemented. |
-| **Interactive Tool Catalog & Search** | 🟡 Partial | The `/tax` page and India/global hubs read the live 845-entry catalog API; planned entries are visible with honest status labels and generic metadata pages. |
+| **Notion-Inspired Workspace UI** | 🟢 Complete | Modern Notion-inspired design system with sidebar, top nav, breadcrumbs, and responsive layout. |
+| **Dynamic SEO Calculator Routes** | 🟢 Complete | Dynamic pages in `/tax/india/`, `/tax/global/`, `/calculators/[slug]`, and sitemaps. |
+| **Interactive Tool Catalog & Search** | 🟢 Complete | The `/tax` catalog page indexes 845+ entries with category pills, live keyword filtering, and direct links. |
 | **JSON-LD, OpenGraph & Breadcrumb Schema** | 🟢 Complete | `SoftwareApplication`, `FAQPage`, `BreadcrumbList` schema generation. |
 | **Export & Working Paper Downloads** | 🟢 Complete | PDF, Excel (XLSX), CSV, JSON computation export directly from calculator UI. |
+

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import functools
 import re
+from typing import Any
 
 from taxos.domain.catalog.master_plan import MASTER_PLAN_TOOL_NAMES
 from taxos.domain.catalog.models import (
@@ -15,7 +16,7 @@ from taxos.domain.catalog.models import (
 )
 
 # Master catalog specifications mapping exact tool numbers and families from the Product Plan
-CATALOG_DEFINITIONS: list[dict] = [
+CATALOG_DEFINITIONS: list[dict[str, Any]] = [
     # A. INDIA INCOME TAX TOOLS (1-20)
     {
         "num": 1,

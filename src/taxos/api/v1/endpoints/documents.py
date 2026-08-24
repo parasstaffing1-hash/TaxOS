@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import Response
 from pydantic import BaseModel, Field, ValidationError
 
@@ -20,6 +20,11 @@ from taxos.application.calculators.factory import CalculatorFactory
 from taxos.application.documents.engine import DocumentEngine, ExportFormat
 from taxos.application.documents.template_registry import TemplateRegistry
 from taxos.application.services.salary_calculator import SalaryCalculatorService
+from taxos.domain.documents.extractor import (
+    DocumentExtractionEngine,
+    DocumentExtractionResult,
+    DocumentType,
+)
 from taxos.domain.documents.schema import ReportTemplateConfig
 from taxos.infrastructure.database.models.iam import User
 
@@ -28,6 +33,7 @@ router = APIRouter(prefix="/documents", tags=["documents"])
 # Singletons — initialized at module load
 _doc_engine = DocumentEngine()
 _template_registry = TemplateRegistry()
+_extractor = DocumentExtractionEngine()
 
 
 def _get_factory() -> CalculatorFactory:
@@ -47,6 +53,26 @@ class GenerateRequest(BaseModel):
     format: ExportFormat = "pdf"
     template_id: str = "default"
     inputs: dict[str, Any] = Field(default_factory=dict)
+
+
+@router.post("/extract", response_model=DocumentExtractionResult)
+async def extract_tax_document(
+    file: UploadFile = File(...),
+    document_type: DocumentType | None = Form(default=None),
+) -> DocumentExtractionResult:
+    """Safely extract reviewable fields from CSV, JSON, PDF, and text documents."""
+    filename = file.filename or "uploaded-document"
+    content_type = file.content_type or "application/octet-stream"
+    payload = await file.read(DocumentExtractionEngine.MAX_BYTES + 1)
+    try:
+        return _extractor.extract(
+            filename=filename,
+            content_type=content_type,
+            payload=payload,
+            document_type=document_type,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=413, detail=str(exc)) from exc
 
 
 @router.post("/{slug}/generate")
@@ -174,7 +200,7 @@ async def update_template(
     return template
 
 
-@router.delete("/templates/{template_id}", status_code=204)
+@router.delete("/templates/{template_id}", status_code=204, response_model=None)
 async def delete_template(
     template_id: str,
     registry: TemplateRegistry = Depends(_get_registry),

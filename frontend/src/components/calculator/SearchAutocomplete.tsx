@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { ArrowRight, Search } from "lucide-react";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 
@@ -48,48 +49,38 @@ export default function SearchAutocomplete() {
   }, [query]);
 
   return (
-    <div ref={wrapperRef} className="relative w-full max-w-xl mx-auto z-50">
+    <div ref={wrapperRef} className="relative z-50 w-full">
       <div className="relative">
         <input
           type="text"
-          className="w-full bg-white dark:bg-slate-900 border border-gray-200 dark:border-gray-700 rounded-full py-3 px-6 pl-12 text-gray-900 dark:text-gray-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300"
-          placeholder="Search locations or calculators (e.g., California, Paycheck)"
+          className="w-full rounded-md border border-[#dedbd5] bg-white py-2.5 pl-10 pr-10 text-sm text-[#4d4942] shadow-none outline-none transition-colors placeholder:text-[#aaa69f] focus:border-[#8da994] focus:ring-2 focus:ring-[#dfece1]"
+          placeholder="Search locations or calculators"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => {
             if (results.length > 0) setIsOpen(true);
           }}
         />
-        <div className="absolute left-4 top-3.5 text-gray-400">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-        </div>
+        <Search className="absolute left-3 top-3 h-4 w-4 text-[#aaa69f]" />
         {loading && (
           <div className="absolute right-4 top-3.5">
-            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#d9d5cd] border-b-[#6f8f76]"></div>
           </div>
         )}
       </div>
 
       {isOpen && results.length > 0 && (
-        <div className="absolute mt-2 w-full bg-white dark:bg-slate-800 border border-gray-100 dark:border-gray-700 rounded-xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2">
-          <ul className="max-h-80 overflow-y-auto py-2">
+        <div className="absolute mt-2 w-full overflow-hidden rounded-lg border border-[#e8e6e1] bg-white shadow-[0_12px_30px_rgba(55,53,47,0.12)]">
+          <ul className="max-h-80 overflow-y-auto py-1.5">
             {results.map((result, idx) => (
               <li key={idx}>
                 <Link
                   href={result.url}
-                  className="block px-6 py-3 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors duration-150 group"
+                  className="group flex items-center justify-between px-3.5 py-2.5 text-sm text-[#6f6a62] transition-colors hover:bg-[#faf9f7] hover:text-[#37352f]"
                   onClick={() => setIsOpen(false)}
                 >
-                  <div className="flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400 mr-3 group-hover:text-blue-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                    </svg>
-                    <span className="text-gray-700 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 font-medium">
-                      {result.name}
-                    </span>
-                  </div>
+                  <span className="flex min-w-0 items-center gap-2.5"><Search className="h-3.5 w-3.5 shrink-0 text-[#aaa69f]" /><span className="truncate">{result.name}</span></span>
+                  <ArrowRight className="h-3.5 w-3.5 shrink-0 text-[#c1bdb5] transition-transform group-hover:translate-x-0.5" />
                 </Link>
               </li>
             ))}

@@ -127,8 +127,10 @@ ignore_missing_imports = true
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+pythonpath = ["src"]
 addopts = "-ra -q --strict-markers"
 markers = [
     "unit: Unit tests",
     "integration: Integration tests",
 ]
+

@@ -36,7 +36,7 @@ logger = structlog.get_logger(__name__)
 _EXCEPTION_STATUS_MAP: dict[type[TaxOSError], int] = {
     NotFoundError: status.HTTP_404_NOT_FOUND,
     ConflictError: status.HTTP_409_CONFLICT,
-    DomainValidationError: status.HTTP_422_UNPROCESSABLE_CONTENT,
+    DomainValidationError: status.HTTP_422_UNPROCESSABLE_ENTITY,
     AuthorizationError: status.HTTP_403_FORBIDDEN,
     InfrastructureError: status.HTTP_503_SERVICE_UNAVAILABLE,
 }

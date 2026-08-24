@@ -4,7 +4,7 @@ import { AuthProvider } from "@/context/AuthContext";
 
 export const metadata: Metadata = {
   title: "TaxOS",
-  description: "Enterprise Tax Calculation Platform",
+  description: "A calm workspace for tax calculations, scenarios, and payroll decisions.",
 };
 
 export default function RootLayout({

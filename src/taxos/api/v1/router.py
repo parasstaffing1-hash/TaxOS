@@ -8,10 +8,16 @@ from taxos.api.v1.endpoints import (
     analytics,
     auth,
     calculator,
+    catalog,
+    compliance,
     documents,
     dynamic_calculators,
+    global_tax,
+    gst,
     health,
+    india_tax,
     organizations,
+    reconciliation,
     seo,
     universal_calculator,
     updater,
@@ -26,6 +32,12 @@ def create_v1_router(settings: Settings) -> APIRouter:
     router.include_router(health.router)
     router.include_router(auth.router)
     router.include_router(organizations.router)
+    router.include_router(catalog.router)
+    router.include_router(india_tax.router)
+    router.include_router(gst.router)
+    router.include_router(reconciliation.router)
+    router.include_router(global_tax.router)
+    router.include_router(compliance.router)
     router.include_router(calculator.router, prefix="/after-tax-salary-calculator")
     router.include_router(calculator.router, prefix="/paycheck-calculator")
     router.include_router(seo.router, prefix="/seo")

@@ -103,7 +103,7 @@ class HTMLDocumentGenerator:
                 disclaimer = f'<div class="disclaimer">{section.content}</div>'
 
         html = f"""<!DOCTYPE html>
-<html lang="{template.locale.language}" dir="{'rtl' if template.locale.rtl else 'ltr'}">
+<html lang="{template.locale.language}" dir="{"rtl" if template.locale.rtl else "ltr"}">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -112,7 +112,9 @@ class HTMLDocumentGenerator:
   * {{ margin: 0; padding: 0; box-sizing: border-box; }}
   body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #1f2937; background: #f9fafb; line-height: 1.6; }}
   .container {{ max-width: 900px; margin: 0 auto; padding: 2rem; }}
-  .header {{ background: {primary}; color: white; padding: 2rem; border-radius: 12px; margin-bottom: 2rem; }}
+  .header {{ background: {
+            primary
+        }; color: white; padding: 2rem; border-radius: 12px; margin-bottom: 2rem; }}
   .header h1 {{ font-size: 1.75rem; margin-bottom: 0.25rem; }}
   .header p {{ opacity: 0.85; font-size: 0.95rem; }}
   .meta {{ font-size: 0.8rem; opacity: 0.7; margin-top: 0.5rem; }}
@@ -121,10 +123,14 @@ class HTMLDocumentGenerator:
   .card-label {{ font-size: 0.85rem; color: #6b7280; margin-bottom: 0.25rem; }}
   .card-value {{ font-size: 1.5rem; font-weight: 700; color: {primary}; }}
   .section {{ background: white; border: 1px solid #e5e7eb; border-radius: 10px; padding: 1.5rem; margin-bottom: 1.5rem; }}
-  .section h2 {{ font-size: 1.15rem; color: {primary}; margin-bottom: 1rem; border-bottom: 2px solid {primary}; padding-bottom: 0.5rem; }}
+  .section h2 {{ font-size: 1.15rem; color: {
+            primary
+        }; margin-bottom: 1rem; border-bottom: 2px solid {primary}; padding-bottom: 0.5rem; }}
   table {{ width: 100%; border-collapse: collapse; }}
   th, td {{ text-align: left; padding: 0.6rem 0.75rem; border-bottom: 1px solid #e5e7eb; }}
-  th {{ background: rgba({primary_rgb}, 0.08); font-weight: 600; font-size: 0.85rem; color: #374151; }}
+  th {{ background: rgba({
+            primary_rgb
+        }, 0.08); font-weight: 600; font-size: 0.85rem; color: #374151; }}
   tr:hover {{ background: #f9fafb; }}
   .chart-container {{ text-align: center; margin: 1rem 0; }}
   .chart-container img {{ max-width: 100%; height: auto; border-radius: 8px; }}
@@ -151,12 +157,16 @@ class HTMLDocumentGenerator:
 {summary_rows}
 </div>
 
-{f'''<div class="section">
+{
+            f'''<div class="section">
 <h2>Calculation Inputs</h2>
 <table><tr><th>Field</th><th>Value</th></tr>
 {inputs_html}
 </table>
-</div>''' if inputs_html else ''}
+</div>'''
+            if inputs_html
+            else ""
+        }
 
 <div class="section">
 <h2>Detailed Breakdown</h2>

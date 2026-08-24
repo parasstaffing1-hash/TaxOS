@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,58 +6,70 @@
 
 @layer base {
   :root {
-    --background: #f8fafc; /* slate-50 */
-    --foreground: #0f172a; /* slate-900 */
-
-    --primary: #3b82f6; /* blue-500 */
+    --background: #fffefa;
+    --foreground: #37352f;
+    --primary: #2f3430;
     --primary-foreground: #ffffff;
-
     --card: #ffffff;
-    --card-foreground: #0f172a;
-
-    --border: #e2e8f0;
-    --ring: #3b82f6;
+    --card-foreground: #37352f;
+    --border: #e8e6e1;
+    --ring: #7ba583;
   }
 
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --background: #020617; /* slate-950 */
-      --foreground: #f8fafc;
+  * { box-sizing: border-box; }
 
-      --primary: #60a5fa; /* blue-400 */
-      --primary-foreground: #020617;
-
-      --card: #0f172a;
-      --card-foreground: #f8fafc;
-
-      --border: #1e293b;
-      --ring: #60a5fa;
-    }
-  }
+  html { background: var(--background); }
 
   body {
+    min-height: 100vh;
     color: var(--foreground);
     background: var(--background);
     font-family: 'Inter', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
+
+  button, input, select, textarea { font: inherit; }
+  button, a { -webkit-tap-highlight-color: transparent; }
 }
 
 @layer components {
+  .notion-app-shell { @apply flex min-h-screen; }
+
+  .notion-sidebar-row {
+    @apply flex min-h-8 items-center gap-2 rounded-md px-2 text-[13px] font-medium text-[#77726a] transition-colors hover:bg-[#ebe9e4] hover:text-[#4d4942];
+  }
+
+  .notion-sidebar-row-active { @apply bg-[#ebe9e4] text-[#37352f]; }
+
+  .notion-sidebar-overlay { @apply pointer-events-none fixed inset-0 z-40 bg-[#37352f]/20 opacity-0 transition-opacity lg:hidden; }
+  .notion-sidebar-overlay-visible { @apply pointer-events-auto opacity-100; }
+  .notion-sidebar-drawer { @apply fixed inset-y-0 left-0 z-50 -translate-x-full transition-transform duration-200 lg:hidden; }
+  .notion-sidebar-drawer-open { @apply translate-x-0; }
+
+  .notion-quiet-button { @apply items-center rounded-md px-3 py-1.5 text-xs font-medium text-[#77726a] transition-colors hover:bg-[#f0eee9] hover:text-[#37352f]; }
+  .notion-dark-button { @apply inline-flex items-center gap-1.5 rounded-md bg-[#2f3430] px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-[#454b46]; }
+  .notion-icon-button { @apply items-center justify-center rounded-md p-2 text-[#9a968f] transition-colors hover:bg-[#f0eee9] hover:text-[#5f5a53]; }
+  .notion-link-button { @apply inline-flex items-center gap-1.5 text-xs font-medium text-[#9a968f] transition-colors hover:text-[#5f5a53]; }
+  .notion-section-title { @apply text-[13px] font-semibold text-[#6f6a62]; }
+
+  .notion-callout { @apply flex items-start gap-3 rounded-xl border border-[#e9e3d8] bg-[#fbf8f1] p-4 sm:items-center sm:px-5 sm:py-4; }
+
   .glass-card {
-    @apply bg-white/80 dark:bg-slate-900/80 backdrop-blur-lg border border-gray-200 dark:border-gray-800 shadow-xl rounded-2xl;
+    @apply rounded-xl border border-[#e8e6e1] bg-white shadow-none;
   }
 
   .premium-input {
-    @apply w-full bg-white dark:bg-slate-900 border border-gray-200 dark:border-gray-800 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-blue-400;
+    @apply w-full rounded-md border border-[#dedbd5] bg-white px-3.5 py-2.5 text-sm text-[#37352f] outline-none transition-colors placeholder:text-[#b2aea7] focus:border-[#8da994] focus:ring-2 focus:ring-[#dfece1];
   }
 
-  .premium-label {
-    @apply block text-sm font-medium text-slate-800 dark:text-slate-200 mb-1.5;
-  }
+  .premium-label { @apply mb-1.5 block text-xs font-medium text-[#6f6a62]; }
 
   .premium-button {
-    @apply bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg shadow-lg hover:bg-blue-700 hover:-translate-y-0.5 transition-all duration-200 active:translate-y-0 disabled:opacity-50 disabled:pointer-events-none;
+    @apply rounded-md bg-[#2f3430] px-5 py-2.5 text-sm font-medium text-white shadow-none transition-colors hover:bg-[#454b46] active:bg-[#202520] disabled:pointer-events-none disabled:opacity-50;
   }
+}
+
+@media (max-width: 639px) {
+  .notion-callout { padding: 14px; }
 }

@@ -12,6 +12,30 @@ type SitemapItem = {
 
 const fallbackSitemap: MetadataRoute.Sitemap = [
   {
+    url: "https://taxos.app/tax",
+    lastModified: new Date(),
+    changeFrequency: "daily",
+    priority: 1,
+  },
+  {
+    url: "https://taxos.app/tax/india",
+    lastModified: new Date(),
+    changeFrequency: "daily",
+    priority: 0.9,
+  },
+  {
+    url: "https://taxos.app/tax/india/compliance",
+    lastModified: new Date(),
+    changeFrequency: "weekly",
+    priority: 0.8,
+  },
+  {
+    url: "https://taxos.app/tax/global",
+    lastModified: new Date(),
+    changeFrequency: "daily",
+    priority: 0.9,
+  },
+  {
     url: "https://taxos.app/after-tax-salary-calculator/us/ca",
     lastModified: new Date(),
     changeFrequency: "weekly",

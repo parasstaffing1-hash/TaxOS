@@ -24,6 +24,9 @@ import {
 } from "lucide-react";
 
 import SearchAutocomplete from "@/components/calculator/SearchAutocomplete";
+import { API_BASE } from "@/lib/api";
+import { isSavedCalculation, type SavedCalculation } from "@/lib/types";
+import { useAuth } from "@/context/AuthContext";
 
 const calculators = [
   {
@@ -68,6 +71,25 @@ const navItems = [
   { label: "Reconciliation", icon: BarChart3, href: "/tax/india/reconciliation" },
   { label: "Analytics", icon: BarChart3, href: "/analytics" },
 ];
+
+const toolLinks: Record<string, string> = {
+  "income-tax-calculator": "/tax/india/income-tax-calculator",
+  "new-tax-regime-calculator": "/tax/india/income-tax-calculator",
+  "old-tax-regime-calculator": "/tax/india/income-tax-calculator",
+  "old-vs-new-regime-comparator": "/tax/india/income-tax-calculator",
+  "ctc-to-take-home-calculator": "/tax/india/salary-calculator",
+  "hra-exemption-calculator": "/tax/india/hra-calculator",
+  "capital-gains-calculator": "/tax/india/capital-gains",
+  "advance-tax-calculator": "/tax/india/advance-tax",
+  "tds-calculator": "/tax/india/tds",
+  "tds-rate-finder": "/tax/india/tds",
+  "gst-calculator": "/tax/india/gst-calculator",
+  "gstin-validator": "/tax/india/gst-calculator",
+  "purchases-vs-gstr2b-reconciliation": "/tax/india/reconciliation",
+  "tax-calendar": "/tax/india/compliance",
+  "global-income-tax-calculator": "/tax/global",
+  "global-vat-calculator": "/tax/global",
+};
 
 
 type SidebarProps = {
@@ -167,6 +189,29 @@ function StatCard({ label, value, detail, tone }: { label: string; value: string
   );
 }
 
+function formatToolName(toolId: string): string {
+  return toolId
+    .split("-")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function formatSavedDate(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "Recently";
+  }
+  return new Intl.DateTimeFormat("en-IN", { month: "short", day: "numeric" }).format(date);
+}
+
+function formatTaxAmount(value: number): string {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
 function QuickFindDialog({
   query,
   onQueryChange,
@@ -263,12 +308,47 @@ function UpdatesDialog({ onClose }: { onClose: () => void }) {
 }
 
 export default function Home() {
+  const { user, isLoading: authLoading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [quickFindOpen, setQuickFindOpen] = useState(false);
   const [quickFindQuery, setQuickFindQuery] = useState("");
   const [updatesOpen, setUpdatesOpen] = useState(false);
   const [favorite, setFavorite] = useState(false);
   const [noteOpen, setNoteOpen] = useState(false);
+  const [savedCalculations, setSavedCalculations] = useState<SavedCalculation[]>([]);
+  const [savedLoading, setSavedLoading] = useState(false);
+
+  useEffect(() => {
+    if (authLoading) {
+      return;
+    }
+    if (!user) {
+      setSavedCalculations([]);
+      setSavedLoading(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    setSavedLoading(true);
+    fetch(`${API_BASE}/calculations`, { credentials: "include", signal: controller.signal })
+      .then(async (response) => {
+        if (!response.ok) {
+          return [];
+        }
+        const body: unknown = await response.json();
+        return Array.isArray(body) ? body.filter(isSavedCalculation) : [];
+      })
+      .then((calculations) => setSavedCalculations(calculations))
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return;
+        }
+        setSavedCalculations([]);
+      })
+      .finally(() => setSavedLoading(false));
+
+    return () => controller.abort();
+  }, [authLoading, user]);
 
   useEffect(() => {
     const handleShortcut = (event: KeyboardEvent) => {
@@ -299,6 +379,23 @@ export default function Home() {
     setQuickFindOpen(false);
     setSidebarOpen(false);
   };
+
+  const toggleSavedFavorite = async (calculation: SavedCalculation) => {
+    const response = await fetch(`${API_BASE}/calculations/${calculation.id}/favourite`, {
+      method: "PATCH",
+      credentials: "include",
+    });
+    if (!response.ok) {
+      return;
+    }
+    const body: unknown = await response.json();
+    if (isSavedCalculation(body)) {
+      setSavedCalculations((items) => items.map((item) => item.id === body.id ? body : item));
+    }
+  };
+
+  const favoriteCount = savedCalculations.filter((calculation) => calculation.is_favourite).length;
+  const latestSavedTax = savedCalculations[0]?.total_tax_payable;
 
   return (
     <div className="notion-app-shell">
@@ -353,9 +450,9 @@ export default function Home() {
               <button type="button" className="notion-link-button">Customize <Settings2 className="h-3.5 w-3.5" /></button>
             </div>
             <div className="grid gap-3 sm:grid-cols-3">
-              <StatCard label="Calculations" value="12" detail="3 saved this week" tone="green" />
-              <StatCard label="Estimated take-home" value="$6,840" detail="Based on your last scenario" tone="orange" />
-              <StatCard label="Effective tax rate" value="24.6%" detail="Down 1.2% from last month" tone="blue" />
+              <StatCard label="Saved calculations" value={authLoading ? "…" : user ? String(savedCalculations.length) : "—"} detail={user ? `${favoriteCount} favorited` : "Sign in to sync"} tone="green" />
+              <StatCard label="Favorites" value={authLoading ? "…" : user ? String(favoriteCount) : "—"} detail={user ? "Across your workspace" : "Sign in to save"} tone="orange" />
+              <StatCard label="Latest saved tax" value={latestSavedTax === undefined ? "—" : formatTaxAmount(latestSavedTax)} detail={user ? "From your most recent snapshot" : "Run a calculator to begin"} tone="blue" />
             </div>
           </section>
 
@@ -384,6 +481,45 @@ export default function Home() {
               })}
               <Link href="/calculators/income-tax-calculator" className="flex items-center gap-2 px-4 py-3 text-xs font-medium text-[#868078] transition-colors hover:bg-[#faf9f7] hover:text-[#4d4942]"><Plus className="h-4 w-4" /> Add a calculator</Link>
             </div>
+          </section>
+
+          <section className="mt-10" aria-labelledby="recent-work-heading">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 id="recent-work-heading" className="notion-section-title">Recent work</h2>
+              {user && <span className="text-[11px] text-[#aaa69f]">Synced to your workspace</span>}
+            </div>
+            {!user && !authLoading && (
+              <div className="rounded-xl border border-dashed border-[#dedbd5] bg-[#faf9f7] px-4 py-5 text-sm text-[#77726a]">
+                <span>Sign in to keep calculations, favorites, and audit snapshots together.</span>{" "}
+                <Link href="/login" className="font-medium text-[#5b7461] hover:text-[#3e5c45]">Sign in →</Link>
+              </div>
+            )}
+            {user && savedLoading && <div className="rounded-xl border border-[#e8e6e1] bg-white px-4 py-5 text-sm text-[#9a968f]">Loading your recent work...</div>}
+            {user && !savedLoading && savedCalculations.length === 0 && (
+              <div className="rounded-xl border border-dashed border-[#dedbd5] bg-[#faf9f7] px-4 py-5 text-sm text-[#77726a]">Your saved calculations will appear here after your first run.</div>
+            )}
+            {user && !savedLoading && savedCalculations.length > 0 && (
+              <div className="overflow-hidden rounded-xl border border-[#e8e6e1] bg-white">
+                {savedCalculations.slice(0, 5).map((calculation) => (
+                  <div key={calculation.id} className="flex items-center gap-3 border-b border-[#f0eee9] px-4 py-3 last:border-b-0 hover:bg-[#faf9f7]">
+                    <Link href={toolLinks[calculation.tool_id] ?? "/tax"} className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-medium text-[#4a4640]">{formatToolName(calculation.tool_id)}</div>
+                      <div className="mt-1 text-xs text-[#9a968f]">{calculation.assessment_year ?? calculation.financial_year} · {formatSavedDate(calculation.created_at)}</div>
+                    </Link>
+                    <span className="hidden text-xs text-[#77726a] sm:inline">{formatTaxAmount(calculation.total_tax_payable)}</span>
+                    <button
+                      type="button"
+                      aria-label={calculation.is_favourite ? "Remove saved calculation from favorites" : "Add saved calculation to favorites"}
+                      aria-pressed={calculation.is_favourite}
+                      onClick={() => void toggleSavedFavorite(calculation)}
+                      className="notion-icon-button"
+                    >
+                      <Star className={`h-4 w-4 ${calculation.is_favourite ? "fill-[#d6a363] text-[#ba7b35]" : ""}`} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </section>
 
           <section className="mt-10 grid gap-3 md:grid-cols-[1.4fr_1fr]">

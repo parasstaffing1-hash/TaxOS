@@ -110,8 +110,35 @@ export interface AuthUser {
   created_at: string;
 }
 
+export interface SavedCalculation {
+  id: string;
+  tool_id: string;
+  jurisdiction: string;
+  financial_year: string;
+  assessment_year: string | null;
+  total_tax_payable: number;
+  effective_tax_rate: number;
+  is_favourite: boolean;
+  created_at: string;
+}
+
 export function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+export function isSavedCalculation(value: unknown): value is SavedCalculation {
+  return (
+    isRecord(value) &&
+    typeof value.id === "string" &&
+    typeof value.tool_id === "string" &&
+    typeof value.jurisdiction === "string" &&
+    typeof value.financial_year === "string" &&
+    (typeof value.assessment_year === "string" || value.assessment_year === null) &&
+    typeof value.total_tax_payable === "number" &&
+    typeof value.effective_tax_rate === "number" &&
+    typeof value.is_favourite === "boolean" &&
+    typeof value.created_at === "string"
+  );
 }
 
 export function errorMessage(error: unknown, fallback = "Something went wrong."): string {

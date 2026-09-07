@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field
 from taxos.domain.catalog.master_plan import MASTER_PLAN_TOOL_NAMES
 from taxos.domain.catalog.models import ToolFamily, ToolPersona, ToolType
 from taxos.domain.catalog.registry import (
+    CATALOG_DEFINITIONS,
     _family_for_plan_number,
     _jurisdiction_for_plan_number,
     _slugify,
@@ -649,10 +650,11 @@ class MasterToolSpecificationRegistry:
 
     def _initialize_specs(self) -> None:
         existing_ids: set[str] = set()
+        catalog_ids_by_number = {item["num"]: item["id"] for item in CATALOG_DEFINITIONS}
         for number, title in sorted(MASTER_PLAN_TOOL_NAMES.items(), key=lambda x: x[0]):
             family = _family_for_plan_number(number)
             jurisdiction = _jurisdiction_for_plan_number(number)
-            tool_id = _slugify(title, number, existing_ids)
+            tool_id = catalog_ids_by_number.get(number, _slugify(title, number, existing_ids))
             existing_ids.add(tool_id)
             tool_type = _tool_type_for_title(title)
 

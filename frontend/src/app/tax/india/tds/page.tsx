@@ -53,7 +53,7 @@ export default function IndiaTDSPage() {
   useEffect(() => {
     async function loadSections() {
       try {
-        const res = await fetch(`${API_BASE}/api/v1/india/tds/sections`);
+        const res = await fetch(`${API_BASE}/india/tds/sections`);
         if (res.ok) {
           const data = await res.json();
           setSections(
@@ -127,7 +127,7 @@ export default function IndiaTDSPage() {
 
     async function calculateTDS() {
       try {
-        const res = await fetch(`${API_BASE}/api/v1/india/tds/calculate`, {
+        const res = await fetch(`${API_BASE}/india/tds/calculate`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

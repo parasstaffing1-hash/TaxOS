@@ -35,13 +35,16 @@ def test_all_845_tools_have_specifications():
         )
 
 
-def test_catalog_registry_tools_are_complete():
-    """Verify that the central catalog registry marks all 845 tools as complete."""
+def test_catalog_registry_exposes_release_status_for_all_tools():
+    """Verify every catalog entry has truthful release metadata."""
     catalog = get_catalog_registry()
     tools = catalog.get_all()
 
     assert len(tools) == 845
+    assert any(tool.status == ImplementationStatus.COMPLETE for tool in tools)
+    assert any(tool.status == ImplementationStatus.NOT_STARTED for tool in tools)
     for tool in tools:
-        assert tool.status == ImplementationStatus.COMPLETE
-        assert tool.api_endpoint is not None
+        assert tool.status in set(ImplementationStatus)
+        if tool.status == ImplementationStatus.COMPLETE:
+            assert tool.api_endpoint is not None
         assert tool.route is not None

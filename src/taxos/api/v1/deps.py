@@ -18,7 +18,12 @@ async def get_db(request: Request) -> AsyncGenerator[AsyncSession]:
     """Dependency to provide a database session."""
     session_factory = request.app.state.session_factory
     async with session_factory() as session:
-        yield session
+        try:
+            yield session
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
 
 
 @lru_cache(maxsize=1)

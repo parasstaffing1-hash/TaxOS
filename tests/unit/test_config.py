@@ -51,3 +51,13 @@ class TestSettings:
             LOG_LEVEL="debug",
         )
         assert settings.LOG_LEVEL == "DEBUG"
+
+    def test_production_rejects_wildcard_cors_origin(self) -> None:
+        with pytest.raises(ValueError, match=r"cannot contain '\*'"):
+            Settings(
+                ENVIRONMENT="production",
+                DATABASE_URL="sqlite+aiosqlite:///",
+                SECRET_KEY="test-production-secret-key-32-characters",
+                FIELD_ENCRYPTION_KEY="test-production-field-key-32-chars",
+                ALLOWED_ORIGINS=["*"],
+            )

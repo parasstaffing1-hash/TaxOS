@@ -1596,8 +1596,8 @@ class ToolCatalogRegistry:
                 item["id"],
                 (
                     f"{route_prefix}/{item['id']}",
-                    f"/api/v1/catalog/{item['id']}/calculate",
-                    ImplementationStatus.COMPLETE,
+                    None,
+                    ImplementationStatus.NOT_STARTED,
                 ),
             )
             description = (

@@ -1,4 +1,24 @@
 services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: /api/v1
+        TAXOS_API_URL: http://api:8000/api/v1
+    container_name: taxos-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      NEXT_TELEMETRY_DISABLED: "1"
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - taxos-network
+    restart: unless-stopped
+
   api:
     build:
       context: .

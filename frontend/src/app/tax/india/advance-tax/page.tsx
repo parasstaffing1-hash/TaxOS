@@ -59,7 +59,7 @@ export default function IndiaAdvanceTaxPage() {
 
     async function calculateAdvanceTax() {
       try {
-        const res = await fetch(`${API_BASE}/api/v1/india/advance-tax/calculate`, {
+        const res = await fetch(`${API_BASE}/india/advance-tax/calculate`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

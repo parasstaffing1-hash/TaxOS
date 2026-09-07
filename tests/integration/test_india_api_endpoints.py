@@ -28,8 +28,10 @@ async def test_api_catalog_list_and_stats(app):
         stats = stats_res.json()
         assert stats["total_tools"] == 845
         assert stats["catalog_target"] == 845
-        assert stats["complete_tools"] == 845
-        assert stats["not_started_tools"] == 0
+        assert stats["complete_tools"] == 16
+        assert stats["released_tools"] == 16
+        assert stats["not_started_tools"] == 829
+        assert stats["release_coverage_percent"] > 0
         assert stats["partial_tools"] == 0
 
         family_res = await client.get("/api/v1/catalog/families")

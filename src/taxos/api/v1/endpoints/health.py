@@ -6,7 +6,7 @@ orchestration and monitoring systems.
 
 from __future__ import annotations
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Response, status
 
 from taxos.api.deps import DbSessionDep, HealthServiceDep
 from taxos.api.schemas.health import HealthResponse, ReadinessResponse
@@ -37,7 +37,10 @@ async def liveness(service: HealthServiceDep) -> HealthResponse:
 async def readiness(
     service: HealthServiceDep,
     session: DbSessionDep,
+    response: Response,
 ) -> ReadinessResponse:
     """Application readiness check including dependencies."""
     result = await service.check_readiness(session)
+    if result["status"] != "ready":
+        response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
     return ReadinessResponse(**result)

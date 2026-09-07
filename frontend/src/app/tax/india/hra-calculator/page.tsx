@@ -51,7 +51,20 @@ export default function HRAExemptionCalculatorPage() {
         });
         if (res.ok) {
           const data = await res.json();
-          if (!cancelled) setResult(data);
+          if (!cancelled) {
+            setResult({
+              basic_salary: basicSalary,
+              hra_received: hraReceived,
+              annual_rent_paid: annualRentPaid,
+              is_metro: isMetro,
+              actual_hra_received: Number(data.actual_hra_received),
+              rent_paid_excess_of_ten_percent_basic: Number(data.rent_minus_ten_percent_basic),
+              metro_or_non_metro_limit: Number(data.salary_percentage_limit),
+              exempt_hra_amount: Number(data.exempt_hra_amount),
+              taxable_hra_amount: Number(data.taxable_hra_amount),
+              statutory_section: "Section 10(13A) read with Rule 2A",
+            });
+          }
         } else {
           // Local statutory fallback
           const limit1 = hraReceived;

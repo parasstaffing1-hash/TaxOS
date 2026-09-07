@@ -47,6 +47,8 @@ interface ToolSpec {
   description: string;
   input_fields: InputFieldSpec[];
   official_sources: OfficialSource[];
+  status: "complete" | "partial" | "not_started" | "blocked";
+  api_endpoint?: string | null;
 }
 
 interface CalculationStep {
@@ -82,6 +84,7 @@ export default function CatalogToolPage() {
   const [calculating, setCalculating] = useState(false);
   const [calcResult, setCalcResult] = useState<CalculationResponse | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const isReleased = spec?.status === "complete" || spec?.status === "partial";
 
   useEffect(() => {
     const controller = new AbortController();
@@ -169,8 +172,25 @@ export default function CatalogToolPage() {
                 <span className="font-mono text-xs text-[#8f8a81]">
                   Tool #{String(spec.number).padStart(3, "0")}
                 </span>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#eaf3eb] px-2.5 py-1 text-[11px] font-medium text-[#4f6f54]">
-                  <CheckCircle2 className="h-3.5 w-3.5" /> Production Ready
+                <span
+                  className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                    isReleased
+                      ? "bg-[#eaf3eb] text-[#4f6f54]"
+                      : "bg-[#fff5e5] text-[#8a641d]"
+                  }`}
+                >
+                  {isReleased ? (
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                  ) : (
+                    <Info className="h-3.5 w-3.5" />
+                  )}
+                  {spec.status === "complete"
+                    ? "Production Ready"
+                    : spec.status === "partial"
+                      ? "Preview Available"
+                      : spec.status === "blocked"
+                        ? "Temporarily Unavailable"
+                        : "In Development"}
                 </span>
               </div>
               <h1 className="mt-4 text-3xl font-semibold tracking-[-0.04em]">
@@ -216,6 +236,14 @@ export default function CatalogToolPage() {
                   Interactive Calculator & Verification
                 </h2>
               </div>
+
+              {!isReleased && (
+                <div className="mt-5 rounded-xl border border-[#f0dfb7] bg-[#fffaf0] p-4 text-xs leading-5 text-[#765b25]">
+                  This tool is listed in the TaxOS catalog but is not released for
+                  authoritative calculations yet. We are validating its statutory rules
+                  and will enable it after review.
+                </div>
+              )}
 
               <div className="mt-6 grid gap-5 sm:grid-cols-2">
                 {spec.input_fields.map((field) => (
@@ -294,11 +322,15 @@ export default function CatalogToolPage() {
                 <button
                   type="button"
                   onClick={handleCalculate}
-                  disabled={calculating}
+                  disabled={calculating || !isReleased}
                   className="inline-flex items-center gap-2 rounded-xl bg-[#2f3430] px-6 py-2.5 text-xs font-medium text-white shadow-sm transition hover:bg-[#1e221f] disabled:opacity-50"
                 >
                   <Sparkles className="h-4 w-4" />
-                  {calculating ? "Calculating…" : "Run Authoritative Calculation"}
+                  {calculating
+                    ? "Calculating…"
+                    : isReleased
+                      ? "Run Authoritative Calculation"
+                      : "Calculation Not Released"}
                 </button>
                 <span className="text-[11px] text-[#8f8a81]">
                   Statutory Rule Pack: {spec.jurisdiction}-2024.1

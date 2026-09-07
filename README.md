@@ -79,8 +79,27 @@ uv run uvicorn taxos.main:app --reload
 
 ```bash
 cp .env.example .env
-docker compose up --build
+# Use the production file explicitly so the development override is not loaded.
+docker compose -f docker-compose.yml up --build -d
 ```
+
+The full stack serves the Next.js frontend at `http://localhost:3000` and the
+FastAPI API at `http://localhost:8000`. Before deployment, replace every local
+secret in `.env`—especially `SECRET_KEY`, `FIELD_ENCRYPTION_KEY`, and
+`POSTGRES_PASSWORD`—with values from your secret manager. Set
+`ENVIRONMENT=production`, keep `DEBUG=false`, and set `ALLOWED_ORIGINS` to the
+exact HTTPS origin(s) serving the frontend. Production settings fail closed
+when required secrets are missing or a wildcard CORS origin is configured.
+
+The API container runs Alembic migrations before Uvicorn starts. Its Docker
+healthcheck uses `/api/v1/health/ready`, so the frontend waits for a live API
+and database. For multi-replica deployments, run `alembic upgrade head` as a
+separate release job before scaling replicas and then start the API services.
+
+The catalog exposes all registered tools, but only tools marked `complete` or
+`partial` are executable. Treat the catalog's `release_coverage_percent` as a
+release metric; do not advertise `not_started` or `blocked` tools as live
+calculators.
 
 ## Development Commands
 

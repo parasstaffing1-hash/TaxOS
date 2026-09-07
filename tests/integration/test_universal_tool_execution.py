@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 from httpx import ASGITransport, AsyncClient
 
+from taxos.application.tools.executor import get_universal_tool_executor
 from taxos.main import app
 
 
@@ -18,12 +19,13 @@ async def test_get_tool_schema_endpoint():
         data = res.json()
         assert data["tool_id"] == "section-80c-calculator"
         assert data["family"] == "india_deductions"
+        assert data["status"] == "not_started"
         assert len(data["input_fields"]) >= 1
         assert len(data["official_sources"]) >= 1
 
 
 @pytest.mark.asyncio
-async def test_calculate_catalog_tool_deductions():
+async def test_unreleased_catalog_tool_is_not_executable():
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         payload = {
@@ -35,18 +37,12 @@ async def test_calculate_catalog_tool_deductions():
             "/api/v1/catalog/section-80c-calculator/calculate",
             json=payload,
         )
-        assert res.status_code == 200
-        data = res.json()
-        assert data["jurisdiction"] == "IN"
-        assert data["tax_type"] == "income_tax_deductions"
-        assert "calculation_id" in data
-        assert "calculation" in data
-        assert data["calculation"]["total_deductions_allowed"] == "225000.00"
-        assert len(data["steps"]) >= 3
+        assert res.status_code == 409
+        assert "not released yet" in res.json()["detail"]
 
 
 @pytest.mark.asyncio
-async def test_calculate_catalog_tool_house_property():
+async def test_unreleased_house_property_tool_is_not_executable():
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         payload = {
@@ -57,15 +53,12 @@ async def test_calculate_catalog_tool_house_property():
             "/api/v1/catalog/house-property-income-calculator/calculate",
             json=payload,
         )
-        assert res.status_code == 200
-        data = res.json()
-        assert data["jurisdiction"] == "IN"
-        assert data["calculation"]["interest_deduction_24b"] == "200000.00"
-        assert data["calculation"]["net_income_or_loss"] == "-200000.00"
+        assert res.status_code == 409
+        assert "not released yet" in res.json()["detail"]
 
 
 @pytest.mark.asyncio
-async def test_calculate_catalog_tool_business_44ad():
+async def test_unreleased_business_tool_is_not_executable():
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         payload = {
@@ -77,9 +70,22 @@ async def test_calculate_catalog_tool_business_44ad():
             "/api/v1/catalog/section-44ad-calculator/calculate",
             json=payload,
         )
-        assert res.status_code == 200
-        data = res.json()
-        assert data["calculation"]["presumptive_profit"] == "600000.00"  # 6% of 1 Cr
+        assert res.status_code == 409
+        assert "not released yet" in res.json()["detail"]
+
+
+def test_universal_executor_keeps_domain_engines_available_for_release_work():
+    executor = get_universal_tool_executor()
+    result = executor.execute_tool(
+        tool_id="section-80c-calculator",
+        payload={
+            "sec_80c_epf_ppf_elss_lic_tuition": 150000,
+            "sec_80ccd1b_nps_additional": 50000,
+            "sec_80d_self_family_premium": 25000,
+        },
+    )
+
+    assert result.calculation["total_deductions_allowed"] == "225000.00"
 
 
 @pytest.mark.asyncio

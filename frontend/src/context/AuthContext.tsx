@@ -38,13 +38,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   const loadCurrentUser = async (): Promise<AuthUser | null> => {
-    const response = await fetch(`${API_BASE}/auth/me`, { credentials: "include" });
-    if (!response.ok) {
+    try {
+      const response = await fetch(`${API_BASE}/auth/me`, { credentials: "include" });
+      if (!response.ok) {
+        return null;
+      }
+
+      const body: unknown = await response.json();
+      return isAuthUser(body) ? body : null;
+    } catch {
       return null;
     }
-
-    const body: unknown = await response.json();
-    return isAuthUser(body) ? body : null;
   };
 
   useEffect(() => {
@@ -54,6 +58,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .then((currentUser) => {
         if (active) {
           setUser(currentUser);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setUser(null);
         }
       })
       .finally(() => {

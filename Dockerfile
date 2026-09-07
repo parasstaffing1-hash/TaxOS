@@ -1,5 +1,5 @@
 # ── Build stage ──────────────────────────────────────────────────
-FROM python:3.13-slim AS builder
+FROM python:3.13-slim-bookworm AS builder
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
@@ -7,7 +7,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 
 # Install uv
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+COPY --from=ghcr.io/astral-sh/uv:0.12.1 /uv /uvx /bin/
 
 # Copy dependency files first for layer caching
 COPY pyproject.toml uv.lock* ./
@@ -19,12 +19,13 @@ RUN uv sync --frozen --no-dev --no-install-project
 COPY src/ src/
 COPY rules/ rules/
 COPY alembic.ini ./
+COPY README.md ./
 
 # Install the project itself
 RUN uv sync --frozen --no-dev
 
 # ── Runtime stage ────────────────────────────────────────────────
-FROM python:3.13-slim AS runtime
+FROM python:3.13-slim-bookworm AS runtime
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -49,7 +50,7 @@ USER taxos
 EXPOSE 8000
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD ["python", "-c", "import httpx; r = httpx.get('http://localhost:8000/api/v1/health'); r.raise_for_status()"]
+    CMD ["python", "-c", "import httpx; r = httpx.get('http://localhost:8000/api/v1/health/ready'); r.raise_for_status()"]
 
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
 CMD ["uvicorn", "taxos.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]

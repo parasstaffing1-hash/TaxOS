@@ -94,6 +94,8 @@ class Settings(BaseSettings):
                 raise ValueError("DEBUG must be false in production")
             if not self.ALLOWED_ORIGINS:
                 raise ValueError("ALLOWED_ORIGINS must contain an explicit origin in production")
+            if any(origin.strip() == "*" for origin in self.ALLOWED_ORIGINS):
+                raise ValueError("ALLOWED_ORIGINS cannot contain '*' in production")
             if self.ENABLE_INTERNAL_TOOLS and not self.admin_emails:
                 raise ValueError(
                     "ADMIN_EMAILS must contain at least one address when internal tools are enabled"

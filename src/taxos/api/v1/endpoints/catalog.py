@@ -56,6 +56,8 @@ async def get_catalog_stats() -> dict[str, int | float]:
         "complete_tools": complete,
         "partial_tools": partial,
         "not_started_tools": not_started,
+        "released_tools": complete + partial,
+        "release_coverage_percent": round((complete + partial) / 845 * 100, 2),
         "india_tools_count": sum(1 for t in all_tools if t.jurisdiction == "IN"),
         "global_tools_count": sum(1 for t in all_tools if t.jurisdiction != "IN"),
         "calculators_count": sum(1 for t in all_tools if t.tool_type == ToolType.CALCULATOR),
@@ -90,12 +92,19 @@ async def get_tool_by_id(tool_id: str) -> TaxTool:
 @router.get("/{tool_id}/schema")
 async def get_tool_schema(tool_id: str) -> dict[str, Any]:
     """Retrieve the interactive UI input schema and legal source references for a tool."""
+    tool = get_catalog_registry().get_by_id(tool_id)
+    if not tool:
+        raise HTTPException(status_code=404, detail=f"Catalog tool '{tool_id}' is not registered.")
     spec = get_master_spec_registry().get_spec(tool_id)
     if not spec:
         raise HTTPException(
             status_code=404, detail=f"Tool specification for '{tool_id}' not found."
         )
-    return spec.model_dump()
+    return {
+        **spec.model_dump(),
+        "status": tool.status.value,
+        "api_endpoint": tool.api_endpoint,
+    }
 
 
 @router.post("/{tool_id}/calculate")
@@ -104,7 +113,24 @@ async def calculate_catalog_tool(
     payload: dict[str, Any] = Body(default_factory=dict),
     tax_year: str = Query(default="2024-25"),
 ) -> dict[str, Any]:
-    """Execute authoritative tax calculation for any of the 845 catalog tools."""
+    """Execute a catalog tool only after its user-facing workflow is verified."""
+    tool = get_catalog_registry().get_by_id(tool_id)
+    if not tool:
+        raise HTTPException(status_code=404, detail=f"Catalog tool '{tool_id}' is not registered.")
+    if tool.status == ImplementationStatus.NOT_STARTED:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                f"Tool '{tool_id}' is listed in the catalog but is not released yet. "
+                "Use a tool marked complete or partial."
+            ),
+        )
+    if tool.status == ImplementationStatus.BLOCKED:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Tool '{tool_id}' is currently blocked and cannot be run.",
+        )
+
     try:
         executor = get_universal_tool_executor()
         result = executor.execute_tool(tool_id=tool_id, payload=payload, tax_year=tax_year)

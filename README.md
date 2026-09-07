@@ -103,8 +103,10 @@ Cloudflare R2 bucket plus scoped Object Read & Write credentials. TaxOS stores
 uploaded documents and generated analytics reports through the R2-compatible
 S3 API. Development and tests use the local `.storage/` fallback.
 
-Aiven PostgreSQL is supported by setting `DATABASE_URL` to the Aiven connection
-string with the `postgresql+asyncpg://` scheme and SSL enabled. See
+Aiven PostgreSQL is supported by setting the Aiven connection string with the
+`postgresql+asyncpg://` scheme and SSL enabled. For the provided Docker Compose
+deployment, put it in `TAXOS_DATABASE_URL`; for a direct API deployment, use
+`DATABASE_URL`. See
 [`docs/storage-and-deployment.md`](docs/storage-and-deployment.md) for the
 exact variables, bucket guidance, and migration notes.
 

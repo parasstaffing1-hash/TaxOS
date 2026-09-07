@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ArrowRight,
   BarChart3,
@@ -70,7 +70,13 @@ const navItems = [
 ];
 
 
-function Sidebar({ onClose }: { onClose?: () => void }) {
+type SidebarProps = {
+  onClose?: () => void;
+  onQuickFind?: () => void;
+  onUpdates?: () => void;
+};
+
+function Sidebar({ onClose, onQuickFind, onUpdates }: SidebarProps) {
   return (
     <aside className="flex h-full w-[248px] shrink-0 flex-col border-r border-[#e8e6e1] bg-[#f7f6f3] px-3 py-3 text-[#57534e]">
       <div className="flex items-center justify-between px-2 pb-5">
@@ -87,12 +93,12 @@ function Sidebar({ onClose }: { onClose?: () => void }) {
       </div>
 
       <div className="space-y-1 px-1">
-        <button className="notion-sidebar-row w-full" type="button">
+        <button className="notion-sidebar-row w-full" type="button" onClick={onQuickFind}>
           <Search className="h-4 w-4 text-[#8d8981]" />
           <span>Quick find</span>
           <span className="ml-auto rounded border border-[#dedbd5] px-1.5 py-0.5 text-[10px] text-[#a5a19a]">⌘ K</span>
         </button>
-        <button className="notion-sidebar-row w-full" type="button">
+        <button className="notion-sidebar-row w-full" type="button" onClick={onUpdates}>
           <Clock3 className="h-4 w-4 text-[#8d8981]" />
           <span>Updates</span>
         </button>
@@ -161,17 +167,149 @@ function StatCard({ label, value, detail, tone }: { label: string; value: string
   );
 }
 
+function QuickFindDialog({
+  query,
+  onQueryChange,
+  onClose,
+}: {
+  query: string;
+  onQueryChange: (value: string) => void;
+  onClose: () => void;
+}) {
+  const matches = calculators.filter((calculator) =>
+    `${calculator.title} ${calculator.description}`.toLowerCase().includes(query.trim().toLowerCase()),
+  );
+
+  return (
+    <div
+      className="fixed inset-0 z-[60] flex items-start justify-center bg-[#37352f]/25 px-4 pt-[12vh] backdrop-blur-[2px]"
+      role="presentation"
+      onMouseDown={onClose}
+    >
+      <div
+        className="w-full max-w-xl overflow-hidden rounded-xl border border-[#dedbd5] bg-white shadow-[0_18px_60px_rgba(55,53,47,0.18)]"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Quick find"
+        onMouseDown={(event) => event.stopPropagation()}
+      >
+        <div className="flex items-center gap-3 border-b border-[#f0eee9] px-4 py-3">
+          <Search className="h-4 w-4 text-[#9a968f]" />
+          <input
+            autoFocus
+            value={query}
+            onChange={(event) => onQueryChange(event.target.value)}
+            onKeyDown={(event) => event.key === "Escape" && onClose()}
+            placeholder="Search your workspace..."
+            aria-label="Search your workspace"
+            className="min-w-0 flex-1 bg-transparent text-sm text-[#37352f] outline-none placeholder:text-[#aaa69f]"
+          />
+          <button type="button" onClick={onClose} className="rounded border border-[#dedbd5] px-1.5 py-0.5 text-[10px] text-[#9a968f] hover:bg-[#f7f6f3]">
+            ESC
+          </button>
+        </div>
+        <div className="max-h-[min(420px,55vh)] overflow-y-auto p-2">
+          <div className="px-2 pb-2 pt-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#aaa69f]">Calculators</div>
+          {matches.length > 0 ? matches.map((calculator) => {
+            const Icon = calculator.icon;
+            return (
+              <Link
+                key={calculator.title}
+                href={calculator.href}
+                onClick={onClose}
+                className="flex items-center gap-3 rounded-lg px-2 py-2.5 hover:bg-[#f7f6f3]"
+              >
+                <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${calculator.iconClass}`}><Icon className="h-4 w-4" /></span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-medium text-[#4a4640]">{calculator.title}</span>
+                  <span className="block truncate text-xs text-[#9a968f]">{calculator.description}</span>
+                </span>
+                <ArrowRight className="h-3.5 w-3.5 text-[#b6b2aa]" />
+              </Link>
+            );
+          }) : <div className="px-2 py-8 text-center text-sm text-[#9a968f]">No calculators found.</div>}
+        </div>
+        <div className="border-t border-[#f0eee9] bg-[#faf9f7] px-4 py-2 text-[11px] text-[#aaa69f]">Search is limited to your saved workspace shortcuts for now.</div>
+      </div>
+    </div>
+  );
+}
+
+function UpdatesDialog({ onClose }: { onClose: () => void }) {
+  return (
+    <div
+      className="fixed inset-0 z-[60] flex items-start justify-end bg-[#37352f]/10 px-4 pt-16 sm:px-8"
+      role="presentation"
+      onMouseDown={onClose}
+    >
+      <div
+        className="w-full max-w-sm overflow-hidden rounded-xl border border-[#dedbd5] bg-white shadow-[0_18px_60px_rgba(55,53,47,0.14)]"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Workspace updates"
+        onMouseDown={(event) => event.stopPropagation()}
+      >
+        <div className="flex items-center justify-between border-b border-[#f0eee9] px-4 py-3">
+          <div><div className="text-sm font-semibold text-[#37352f]">Workspace updates</div><div className="mt-0.5 text-xs text-[#9a968f]">A short changelog from TaxOS</div></div>
+          <button type="button" onClick={onClose} aria-label="Close updates" className="notion-icon-button"><X className="h-4 w-4" /></button>
+        </div>
+        <div className="space-y-3 p-4">
+          <div className="rounded-lg bg-[#f5faf5] p-3"><div className="text-xs font-semibold text-[#4f6f54]">Today</div><div className="mt-1 text-sm text-[#4a4640]">R2-ready document storage and Aiven database support are ready for launch configuration.</div></div>
+          <div className="rounded-lg bg-[#f7f6f3] p-3"><div className="text-xs font-semibold text-[#77726a]">Current coverage</div><div className="mt-1 text-sm text-[#4a4640]">16 verified calculators are released; the rest remain safely marked as planned.</div></div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Home() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [quickFindOpen, setQuickFindOpen] = useState(false);
+  const [quickFindQuery, setQuickFindQuery] = useState("");
+  const [updatesOpen, setUpdatesOpen] = useState(false);
+  const [favorite, setFavorite] = useState(false);
+  const [noteOpen, setNoteOpen] = useState(false);
+
+  useEffect(() => {
+    const handleShortcut = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        setQuickFindOpen(true);
+        setUpdatesOpen(false);
+      }
+      if (event.key === "Escape") {
+        setQuickFindOpen(false);
+        setUpdatesOpen(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleShortcut);
+    return () => window.removeEventListener("keydown", handleShortcut);
+  }, []);
+
+  const openQuickFind = () => {
+    setQuickFindQuery("");
+    setQuickFindOpen(true);
+    setUpdatesOpen(false);
+    setSidebarOpen(false);
+  };
+
+  const openUpdates = () => {
+    setUpdatesOpen(true);
+    setQuickFindOpen(false);
+    setSidebarOpen(false);
+  };
 
   return (
     <div className="notion-app-shell">
+      {quickFindOpen && <QuickFindDialog query={quickFindQuery} onQueryChange={setQuickFindQuery} onClose={() => setQuickFindOpen(false)} />}
+      {updatesOpen && <UpdatesDialog onClose={() => setUpdatesOpen(false)} />}
       <div className={`notion-sidebar-overlay ${sidebarOpen ? "notion-sidebar-overlay-visible" : ""}`} onClick={() => setSidebarOpen(false)} />
       <div className={`notion-sidebar-drawer ${sidebarOpen ? "notion-sidebar-drawer-open" : ""}`}>
-        <Sidebar onClose={() => setSidebarOpen(false)} />
+        <Sidebar onClose={() => setSidebarOpen(false)} onQuickFind={openQuickFind} onUpdates={openUpdates} />
       </div>
       <div className="hidden lg:block">
-        <Sidebar />
+        <Sidebar onQuickFind={openQuickFind} onUpdates={openUpdates} />
       </div>
 
       <main className="min-w-0 flex-1 bg-[#fffefa]">
@@ -197,7 +335,7 @@ export default function Home() {
               <h1 className="text-[38px] font-semibold leading-tight tracking-[-0.045em] text-[#37352f] sm:text-[46px]">Good morning, Paras</h1>
               <p className="mt-3 max-w-xl text-[15px] leading-7 text-[#858078]">A calm place to understand your taxes, explore scenarios, and keep your payroll decisions in one place.</p>
             </div>
-            <button type="button" className="notion-icon-button hidden sm:flex" aria-label="Add to favorites"><Star className="h-4 w-4" /></button>
+            <button type="button" className="notion-icon-button hidden sm:flex" aria-label={favorite ? "Remove from favorites" : "Add to favorites"} aria-pressed={favorite} onClick={() => setFavorite((value) => !value)}><Star className={`h-4 w-4 ${favorite ? "fill-[#d6a363] text-[#ba7b35]" : ""}`} /></button>
           </div>
 
           <section className="notion-callout mb-8" aria-label="Workspace search">
@@ -260,7 +398,8 @@ export default function Home() {
               <div className="flex items-center gap-2 text-[#77726a]"><FileText className="h-4 w-4" /><span className="text-xs font-medium">Recent note</span></div>
               <p className="mt-3 text-sm font-medium text-[#4a4640]">2024 filing assumptions</p>
               <p className="mt-1 text-xs leading-5 text-[#98938c]">Review your saved deductions before running a new scenario.</p>
-              <button type="button" className="mt-4 text-xs font-medium text-[#77726a] hover:text-[#37352f]">Open note →</button>
+              <button type="button" onClick={() => setNoteOpen((value) => !value)} className="mt-4 text-xs font-medium text-[#77726a] hover:text-[#37352f]">{noteOpen ? "Close note ↑" : "Open note →"}</button>
+              {noteOpen && <div className="mt-3 rounded-lg bg-[#faf9f7] p-3 text-xs leading-5 text-[#77726a]">Before a new scenario, confirm your assessment year, standard deduction, and eligible Chapter VI-A claims.</div>}
             </div>
           </section>
 

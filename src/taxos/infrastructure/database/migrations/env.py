@@ -16,6 +16,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 import taxos.infrastructure.database.models  # noqa: F401
 from taxos.core.config import get_settings
 from taxos.infrastructure.database.base import Base
+from taxos.infrastructure.database.session import normalize_database_url
 
 # Alembic Config object
 config = context.config
@@ -28,7 +29,10 @@ if config.config_file_name is not None:
 settings = get_settings()
 # Alembic uses ConfigParser interpolation. Escaping percent signs keeps valid
 # database passwords such as ``p%40ss`` from breaking migration startup.
-config.set_main_option("sqlalchemy.url", settings.DATABASE_URL.replace("%", "%%"))
+config.set_main_option(
+    "sqlalchemy.url",
+    normalize_database_url(settings.DATABASE_URL).replace("%", "%%"),
+)
 
 # Target metadata for autogenerate
 target_metadata = Base.metadata

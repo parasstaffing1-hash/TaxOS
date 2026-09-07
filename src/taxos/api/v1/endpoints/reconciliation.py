@@ -5,6 +5,8 @@ from __future__ import annotations
 import csv
 import io
 import json
+import re
+from contextlib import suppress
 from decimal import Decimal
 from uuid import uuid4
 
@@ -16,8 +18,10 @@ from taxos.domain.reconciliation.engine import (
     ReconciliationReport,
     ReusableReconciliationEngine,
 )
+from taxos.infrastructure.storage import ObjectStorageError, get_object_storage
 
 router = APIRouter(prefix="/reconciliation", tags=["Reconciliation Engine"])
+MAX_RECONCILIATION_UPLOAD_BYTES = 15 * 1024 * 1024
 
 
 class ReconciliationRunPayload(BaseModel):
@@ -146,6 +150,13 @@ def re_clean_num(val: str) -> str:
     return cleaned if cleaned else "0.0"
 
 
+def _safe_upload_name(filename: str | None, fallback: str) -> str:
+    """Reduce an upload name to a safe, stable object-key component."""
+    name = (filename or fallback).replace("\\", "/").rsplit("/", maxsplit=1)[-1]
+    name = re.sub(r"[^A-Za-z0-9._-]+", "-", name).strip(".-")
+    return name[:120] or fallback
+
+
 @router.post("/run", response_model=ReconciliationReport)
 async def run_reconciliation(payload: ReconciliationRunPayload) -> ReconciliationReport:
     """Execute multi-pass reconciliation between accounting books and portal returns."""
@@ -171,8 +182,18 @@ async def upload_and_reconcile(
     date_tolerance_days: int = Form(default=60),
 ) -> ReconciliationReport:
     """Upload books & portal documents (CSV/JSON), parse records, and run complete automated tax reconciliation."""
-    books_bytes = await books_file.read()
-    portal_bytes = await portal_file.read()
+    books_bytes = await books_file.read(MAX_RECONCILIATION_UPLOAD_BYTES + 1)
+    portal_bytes = await portal_file.read(MAX_RECONCILIATION_UPLOAD_BYTES + 1)
+    if len(books_bytes) > MAX_RECONCILIATION_UPLOAD_BYTES:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail="Books upload exceeds the 15 MiB limit",
+        )
+    if len(portal_bytes) > MAX_RECONCILIATION_UPLOAD_BYTES:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail="Portal upload exceeds the 15 MiB limit",
+        )
 
     books_records = _parse_tabular_records(
         books_bytes, books_file.filename or "books.csv", "books"
@@ -181,11 +202,39 @@ async def upload_and_reconcile(
         portal_bytes, portal_file.filename or "portal.csv", "portal"
     )
 
+    run_id = uuid4().hex
+    storage = get_object_storage()
+    storage_keys: dict[str, str] = {}
+    try:
+        books_object = await storage.put_bytes(
+            f"reconciliation/{run_id}/books/{_safe_upload_name(books_file.filename, 'books.csv')}",
+            books_bytes,
+            content_type=books_file.content_type or "text/csv",
+            metadata={"reconciliation-run-id": run_id, "source": "books"},
+        )
+        storage_keys["books"] = books_object.key
+        portal_object = await storage.put_bytes(
+            f"reconciliation/{run_id}/portal/{_safe_upload_name(portal_file.filename, 'portal.csv')}",
+            portal_bytes,
+            content_type=portal_file.content_type or "text/csv",
+            metadata={"reconciliation-run-id": run_id, "source": "portal"},
+        )
+        storage_keys["portal"] = portal_object.key
+    except ObjectStorageError as exc:
+        for key in storage_keys.values():
+            with suppress(ObjectStorageError):
+                await storage.delete(key)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Object storage is unavailable; reconciliation was not saved",
+        ) from exc
+
     engine = ReusableReconciliationEngine(
         amount_tolerance_absolute=amount_tolerance,
         date_tolerance_days=date_tolerance_days,
     )
-    return engine.reconcile(
+    report = engine.reconcile(
         books_records=books_records,
         portal_records=portal_records,
     )
+    return report.model_copy(update={"storage_keys": storage_keys})

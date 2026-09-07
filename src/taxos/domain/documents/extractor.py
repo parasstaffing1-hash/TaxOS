@@ -97,6 +97,8 @@ class DocumentExtractionResult(BaseModel):
     warnings: list[str] = Field(default_factory=list)
     overall_confidence_score: float = Field(default=0.0, ge=0.0, le=1.0)
     review_required: bool = True
+    storage_key: str | None = None
+    storage_backend: str | None = None
 
 
 class DocumentExtractionEngine:

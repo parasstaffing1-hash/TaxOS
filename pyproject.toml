@@ -23,6 +23,7 @@ dependencies = [
     "fpdf2>=2.8.7",
     "openpyxl>=3.1.5",
     "beautifulsoup4>=4.12.0",
+    "boto3>=1.40.0",
     "lxml>=5.1.0",
     "pdfplumber>=0.11.0",
     "pypdf>=5.1.0",
@@ -121,6 +122,8 @@ module = [
     "openpyxl.*",
     "yaml.*",
     "apscheduler.*",
+    "boto3.*",
+    "botocore.*",
     "lxml.*",
 ]
 ignore_missing_imports = true

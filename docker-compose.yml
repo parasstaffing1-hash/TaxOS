@@ -8,7 +8,7 @@ services:
         TAXOS_API_URL: http://api:8000/api/v1
     container_name: taxos-frontend
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     environment:
       NODE_ENV: production
       NEXT_TELEMETRY_DISABLED: "1"
@@ -25,11 +25,11 @@ services:
       dockerfile: Dockerfile
     container_name: taxos-api
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     env_file:
       - ${TAXOS_ENV_FILE:-.env}
     environment:
-      DATABASE_URL: postgresql+asyncpg://taxos:${POSTGRES_PASSWORD}@db:5432/taxos
+      DATABASE_URL: ${TAXOS_DATABASE_URL:-postgresql+asyncpg://taxos:${POSTGRES_PASSWORD}@db:5432/taxos}
     depends_on:
       db:
         condition: service_healthy

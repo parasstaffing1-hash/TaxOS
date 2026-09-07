@@ -42,6 +42,17 @@ class Settings(BaseSettings):
     DATABASE_POOL_SIZE: int = 10
     DATABASE_MAX_OVERFLOW: int = 20
 
+    # ── Object storage ───────────────────────────────────────────
+    # Local storage is convenient for development. Production should use
+    # the R2-compatible S3 backend so uploads and generated reports survive
+    # container restarts and can be shared by multiple API workers.
+    STORAGE_BACKEND: Literal["local", "r2"] = "local"
+    STORAGE_LOCAL_ROOT: str = ".storage"
+    R2_ENDPOINT: str | None = None
+    R2_BUCKET: str | None = None
+    R2_ACCESS_KEY_ID: str | None = None
+    R2_SECRET_ACCESS_KEY: str | None = None
+
     # ── Security ─────────────────────────────────────────────────
     # Local-only fallback. Production validation below requires a provisioned key.
     SECRET_KEY: str = DEFAULT_DEVELOPMENT_SECRET
@@ -99,6 +110,21 @@ class Settings(BaseSettings):
             if self.ENABLE_INTERNAL_TOOLS and not self.admin_emails:
                 raise ValueError(
                     "ADMIN_EMAILS must contain at least one address when internal tools are enabled"
+                )
+        if self.STORAGE_BACKEND == "r2":
+            missing = [
+                name
+                for name, value in {
+                    "R2_ENDPOINT": self.R2_ENDPOINT,
+                    "R2_BUCKET": self.R2_BUCKET,
+                    "R2_ACCESS_KEY_ID": self.R2_ACCESS_KEY_ID,
+                    "R2_SECRET_ACCESS_KEY": self.R2_SECRET_ACCESS_KEY,
+                }.items()
+                if not value or not value.strip()
+            ]
+            if missing:
+                raise ValueError(
+                    "R2 storage requires: " + ", ".join(missing)
                 )
         return self
 

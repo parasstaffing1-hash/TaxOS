@@ -18,18 +18,28 @@ from sqlalchemy.ext.asyncio import (
 from taxos.core.config import Settings
 
 
+def normalize_database_url(database_url: str) -> str:
+    """Use the asyncpg driver for plain PostgreSQL/Aiven connection URLs."""
+    if database_url.startswith("postgres://"):
+        return "postgresql+asyncpg://" + database_url.removeprefix("postgres://")
+    if database_url.startswith("postgresql://"):
+        return "postgresql+asyncpg://" + database_url.removeprefix("postgresql://")
+    return database_url
+
+
 def build_engine(settings: Settings) -> AsyncEngine:
     """Create a configured async SQLAlchemy engine."""
+    database_url = normalize_database_url(settings.DATABASE_URL)
     engine_options: dict[str, object] = {
         "echo": settings.DATABASE_ECHO,
         "pool_pre_ping": True,
     }
-    if not settings.DATABASE_URL.startswith("sqlite"):
+    if not database_url.startswith("sqlite"):
         engine_options.update(
             pool_size=settings.DATABASE_POOL_SIZE,
             max_overflow=settings.DATABASE_MAX_OVERFLOW,
         )
-    return create_async_engine(settings.DATABASE_URL, **engine_options)
+    return create_async_engine(database_url, **engine_options)
 
 
 def build_session_factory(engine: AsyncEngine) -> async_sessionmaker[AsyncSession]:

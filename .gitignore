@@ -32,6 +32,10 @@ Thumbs.db
 .env.local
 .env.*.local
 
+# ── Local object storage/cache ───────────────────────────────────
+.storage/
+.uv-cache/
+
 # ── Testing ──────────────────────────────────────────────────────
 .coverage
 htmlcov/

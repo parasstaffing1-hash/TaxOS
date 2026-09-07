@@ -1,10 +1,9 @@
 """Analytics Endpoints."""
 
-import os
 from typing import Any
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
-from fastapi.responses import FileResponse
+from fastapi.responses import Response
 
 from taxos.api.dependencies.auth import get_current_admin
 from taxos.api.schemas.analytics import (
@@ -19,6 +18,7 @@ from taxos.api.v1.deps import get_salary_calculator_service
 from taxos.application.services.analytics import AsyncMemoizer, TaxAnalyticsService
 from taxos.application.services.reporting import ReportingEngine
 from taxos.application.services.salary_calculator import SalaryCalculatorService
+from taxos.infrastructure.storage.object_storage import ObjectStorageError, get_object_storage
 
 router = APIRouter(tags=["analytics"], dependencies=[Depends(get_current_admin)])
 
@@ -80,8 +80,21 @@ async def get_report_status(job_id: str) -> Any:
         raise HTTPException(status_code=404, detail="Job not found")
 
     if job["status"] == "completed":
-        file_path = job["file_path"]
-        if file_path and os.path.exists(file_path):
-            return FileResponse(file_path, filename=f"report_{job_id}.xlsx")
+        storage_key = job.get("storage_key")
+        if not storage_key:
+            raise HTTPException(status_code=500, detail="Report storage metadata is missing")
+        try:
+            payload = await get_object_storage().get_bytes(storage_key)
+        except ObjectStorageError as exc:
+            raise HTTPException(status_code=503, detail="Report storage is unavailable") from exc
+        if payload is None:
+            raise HTTPException(status_code=404, detail="Report file not found")
+        return Response(
+            content=payload,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={
+                "Content-Disposition": f'attachment; filename="report_{job_id}.xlsx"',
+            },
+        )
 
     return {"job_id": job_id, "status": job["status"], "error": job.get("error")}

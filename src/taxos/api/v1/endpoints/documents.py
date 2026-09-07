@@ -6,6 +6,7 @@ for any dynamic calculator. Also provides template CRUD for the admin panel.
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
@@ -27,6 +28,7 @@ from taxos.domain.documents.extractor import (
 )
 from taxos.domain.documents.schema import ReportTemplateConfig
 from taxos.infrastructure.database.models.iam import User
+from taxos.infrastructure.storage.object_storage import ObjectStorageError, get_object_storage
 
 router = APIRouter(prefix="/documents", tags=["documents"])
 
@@ -42,6 +44,13 @@ def _get_factory() -> CalculatorFactory:
 
 def _get_registry() -> TemplateRegistry:
     return _template_registry
+
+
+def _safe_upload_name(filename: str) -> str:
+    """Keep user-controlled filenames safe for object keys and download headers."""
+    basename = filename.replace("\\", "/").rsplit("/", maxsplit=1)[-1]
+    sanitized = re.sub(r"[^A-Za-z0-9._-]", "-", basename).strip(".-")
+    return (sanitized[:180] or "uploaded-document")
 
 
 # ── Document Generation ─────────────────────────────────────────
@@ -65,14 +74,27 @@ async def extract_tax_document(
     content_type = file.content_type or "application/octet-stream"
     payload = await file.read(DocumentExtractionEngine.MAX_BYTES + 1)
     try:
-        return _extractor.extract(
+        result = _extractor.extract(
             filename=filename,
             content_type=content_type,
             payload=payload,
             document_type=document_type,
         )
+        storage_key = f"documents/{result.document_id}/{_safe_upload_name(filename)}"
+        stored = await get_object_storage().put_bytes(
+            storage_key,
+            payload,
+            content_type=content_type,
+            content_disposition=f'attachment; filename="{_safe_upload_name(filename)}"',
+            metadata={"document-id": result.document_id},
+        )
+        return result.model_copy(
+            update={"storage_key": stored.key, "storage_backend": stored.backend}
+        )
     except ValueError as exc:
         raise HTTPException(status_code=413, detail=str(exc)) from exc
+    except ObjectStorageError as exc:
+        raise HTTPException(status_code=503, detail="Document storage is unavailable") from exc
 
 
 @router.post("/{slug}/generate")

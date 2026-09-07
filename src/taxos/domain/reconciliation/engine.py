@@ -77,6 +77,10 @@ class ReconciliationReport(BaseModel):
     total_unclaimed_or_mismatch_tax: Decimal
 
     pairs: list[ReconciliationMatchPair]
+    storage_keys: dict[str, str] = Field(
+        default_factory=dict,
+        description="Object-storage keys for the uploaded source files, when persisted",
+    )
     generated_at: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
 
 

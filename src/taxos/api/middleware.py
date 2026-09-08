@@ -29,6 +29,7 @@ from taxos.core.exceptions import (
 )
 
 MAX_REQUEST_ID_LENGTH = 64
+VALIDATION_ERROR_STATUS = getattr(status, "HTTP_422_UNPROCESSABLE_CONTENT", 422)
 
 logger = structlog.get_logger(__name__)
 
@@ -36,9 +37,7 @@ logger = structlog.get_logger(__name__)
 _EXCEPTION_STATUS_MAP: dict[type[TaxOSError], int] = {
     NotFoundError: status.HTTP_404_NOT_FOUND,
     ConflictError: status.HTTP_409_CONFLICT,
-    DomainValidationError: getattr(
-        status, "HTTP_422_UNPROCESSABLE_CONTENT", status.HTTP_422_UNPROCESSABLE_ENTITY
-    ),
+    DomainValidationError: VALIDATION_ERROR_STATUS,
     AuthorizationError: status.HTTP_403_FORBIDDEN,
     InfrastructureError: status.HTTP_503_SERVICE_UNAVAILABLE,
 }
@@ -122,7 +121,7 @@ def register_exception_handlers(app: FastAPI) -> None:
             errors=formatted_errors,
         )
         return JSONResponse(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=VALIDATION_ERROR_STATUS,
             content=_build_error_body(
                 "VALIDATION_ERROR",
                 "The provided input data is invalid.",
